@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  ubs_api:
+    container_name: api_ubs
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    restart: always
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - '3000:3000'
+    command: npm run start
+    env_file:
+      - variaveis.env
+    depends_on:
+      - ubs_mysql
+  ubs_mysql:
+    container_name: ubs_mysql
+    image: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: "ubs2"
+      MYSQL_USER: "user"
+      MYSQL_PASSWORD: "123456"
+      MYSQL_ROOT_PASSWORD: "123456"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - '5434:3306'
+
+volumes:
+  mysql_data:

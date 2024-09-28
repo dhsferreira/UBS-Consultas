@@ -1,0 +1,355 @@
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet } from 'react-native';
+import Logger from '../../services/logger'
+import Loading from '../../components/Loading'
+import {
+    Button,
+    Text,
+    TextInput,
+    Avatar,
+    withTheme,
+    Portal,
+    Dialog,
+    HelperText,
+} from 'react-native-paper'
+import EmailInput from '../../components/EmailInput'
+import { Auth } from '../../services/Auth'
+import { FirebaseUserProps } from '../../@types/User.type'
+import { Api } from '../../services/Api.ts'
+import { auth } from '../../../firebaseConfig.js'
+import {
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    updateProfile,
+    signInWithCredential,
+    EmailAuthProvider
+} from 'firebase/auth'
+const Login = ({ navigation }: any) => {
+    const [api] = useState(new Api()) // Como essa api não foi construida com funções staticas, ela precisa ser instânciada. 
+    const [showLoading, setShowLoading] = useState(false)
+    const [displayName, setDisplayName] = useState('')
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState<string>('')
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false)  const [confirmPassword, setConfirmPassword] = useState('')  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false)
+    const [isRegistering, setIsRegistering] = useState(false)
+    const [openDialog, setOpenDialog] = useState(false)
+    const [dialogTitle, setDialogTitle] = useState('')
+    const [dialogDescription, setDialogDescription] = useState('')
+    const handleEmailLogin = async () => {
+        try {
+            setShowLoading(true);
+            if (email.length <= 0) {
+                setDialogTitle('Digite seu email!');
+                setDialogDescription('Por favor, digite seu email e tente novamente!');
+                setOpenDialog(true);
+                return;
+            }
+            if (password.length <= 0) {
+                setDialogTitle('Digite sua senha!');
+                setDialogDescription('Por favor, digite sua senha e tente novamente!');
+                setOpenDialog(true);
+                return;
+            }
+            signInWithEmailAndPassword(auth, email, password)
+                .then(async (userCredential) => {
+                    Logger(
+                        'Login',
+                        'handleEmailLogin',
+                        'Success when log-in with email and password.',
+                    );
+                    const credential = EmailAuthProvider.credential(
+                        auth.currentUser.email,
+                        password
+                    )
+                    Auth.authCredential = credential
+                    await Auth.setFirebaseAuthCredential(credential)
+                    const firestoreUser = await
+                        api.userCollection.getUser(userCredential.user.uid)
+                    await Auth.setFirestoreUser(firestoreUser)
+                    navigation.navigate('Home')
+                })
+                .catch((error: any) => {
+                    setDialogTitle('Erro desconhecido!');
+                    setDialogDescription(
+                        'Um erro desconhecido ocorreu, tente novamente mais tarde ou contate o suporte!',
+                    );
+                    setOpenDialog(true);
+                    Logger(
+                        'Login',
+                        'handleEmailLogin',
+                        'Error when creating an account with email and password.', error,
+                    );
+                });
+            setShowLoading(false);
+        } catch (error: any) {
+            Logger('Login', 'handleLogin', 'Error on axios Post to log-in.', error);
+            setShowLoading(false);
+        }
+    };
+    useEffect(() => {
+        setIsRegistering(false); // Reset page state when logout or login  const run = async () => { 
+        const firebaseCredential = await Auth.getFirebaseAuthCredential()
+        if (firebaseCredential) await signInWithCredential(auth, firebaseCredential).catch((error) => console.error(error))
+        if (auth && auth.currentUser) {
+            navigation.navigate('Home')
+        }
+        auth.onAuthStateChanged(Auth.onAuthStateChanged); // unsubscribe on unmount 
+    } 
+    run() 
+    }, [auth])
+const handleCreateAccountWithEmail = () => {
+    if (password !== confirmPassword && confirmPassword.length > 0) {
+        setDialogTitle('As senhas no coincidem!');
+        setDialogDescription('Por favor, verifique as senhas e tente novamente!');
+        setOpenDialog(true);
+        return;
+    }
+    createUserWithEmailAndPassword(auth, email, password)
+        .then(async (userCredential) => {
+            console.debug('User account created & signed in!'); await api.userCollection.createUser({
+                id: userCredential.user.uid,
+                displayName: displayName,
+                email: email,
+                photoURL: '',
+                isEnabled: false,
+                isDriver: true,
+                isAdmin: false,
+                truck: null,
+                password: password,
+                createdAt: new Date(Date.now()).toString(),
+                updatedAt: new Date(Date.now()).toString()
+            })
+            await updateProfile(auth.currentUser, {
+                displayName: displayName,
+                photoURL: '',
+            })
+            const credential = EmailAuthProvider.credential(
+                auth.currentUser.email,
+                password
+            )
+            Auth.setFirebaseAuthCredential(credential)
+            navigation.navigate('Home')
+        })
+        .catch((error: { code: string; }) => {
+            if (error.code === 'auth/email-already-in-use') {
+                setDialogTitle('Email em uso!');
+                setDialogDescription(
+                    'Esse e-mail ja esta em uso, tente outro e-mail ou recupere sua senha!',
+                );
+                setOpenDialog(true);
+                return;
+            }
+            if (error.code === 'auth/invalid-email') {
+                setDialogTitle('Email invalido!');
+                setDialogDescription('Esse e-mail é invalido, tente outro e mail!');
+                setOpenDialog(true);
+                return;
+            }
+            setDialogTitle('Erro desconhecido!');
+            setDialogDescription(
+                'Um erro desconhecido ocorreu, tente novamente mais tarde ou
+contate o suporte!', 
+            );
+            setOpenDialog(true);
+            Logger(
+                'Login',
+                'handleCreateAccountWithEmail',
+                'Error when creating an account with email and password.', error,
+            );
+        });
+};
+const clearForm = () => {
+    setDisplayName('')
+    setEmail('')
+    setPassword('')
+    setConfirmPassword('')
+}
+return (
+    <View
+        style={styles.container}>
+        {showLoading ? (
+            <Loading size={'large'} />
+        ) : (
+            <View style={styles.innerContainer}>
+                <Portal>
+                    <Dialog visible={openDialog}>
+                        <Dialog.Title>{dialogTitle}</Dialog.Title>
+                        <Dialog.Content>
+                            <Text variant="bodyMedium">{dialogDescription}</Text>  </Dialog.Content>
+                        <Dialog.Actions>
+                            <Button
+                                onPress={async () => {
+                                    setOpenDialog(false);
+                                    setDialogTitle('');
+                                    setDialogDescription('');
+                                }}>
+                                Fechar
+                            </Button>
+                        </Dialog.Actions>
+                    </Dialog>
+                </Portal>
+                <Avatar.Image
+                    size={250}
+                    style={{ marginBottom: 30 }}
+                    source={require('../../assets/truck.png')}
+                />
+                {isRegistering ? (
+                    <View>
+                        <Text
+                            variant="displaySmall"
+                            style={{ textAlign: 'center', marginBottom: 32 }}>  S.A Transportes
+                        </Text>
+                        <TextInput
+                            label={'Nome'}
+                            value={displayName}
+                            onChangeText={setDisplayName}
+                            style={{ marginBottom: 10 }}
+                        />
+                        <EmailInput value={email} onChange={setEmail} />
+                        <TextInput
+                            label="Digite sua senha"
+                            secureTextEntry={!isPasswordVisible}
+                            onChangeText={setPassword}
+                            value={password}
+                            right={
+                                <TextInput.Icon
+                                    icon={isPasswordVisible ? 'eye-off' : 'eye'} onPress={() =>
+                                        setIsPasswordVisible(!isPasswordVisible)}
+                                />
+                            }
+                        />
+                        <TextInput
+                            label="Confirme sua senha"
+                            secureTextEntry={!isConfirmPasswordVisible}
+                            onChangeText={setConfirmPassword}
+                            value={confirmPassword}
+                            style={{ marginTop: 10 }}
+                            right={
+                                <TextInput.Icon
+                                    icon={isConfirmPasswordVisible ? 'eye-off' : 'eye'} onPress={() =>
+
+                                        setIsConfirmPasswordVisible(!isConfirmPasswordVisible)
+                                    }
+                                />
+                            }
+                        />
+                        <HelperText
+                            type="error"
+                            visible={
+                                password !== confirmPassword && confirmPassword.length > 0
+                            }>
+                            As senhas não coincidem!
+                        </HelperText>
+                    </View>
+                ) : (
+                    <View>
+                        <Text
+                            variant="displaySmall"
+                            style={{ textAlign: 'center', marginBottom: 32 }}>  S.A Transportes
+                        </Text>
+                        <EmailInput value={email} onChange={setEmail} />
+                        <TextInput
+                            label="Senha"
+                            secureTextEntry={!isPasswordVisible}
+                            onChangeText={setPassword}
+                            value={password}
+                            right={
+                                <TextInput.Icon
+                                    icon={isPasswordVisible ? 'eye-off' : 'eye'} onPress={() =>
+                                        setIsPasswordVisible(!isPasswordVisible)}
+                                />
+                            }
+                        />
+                    </View>
+                )}
+                {isRegistering ? (
+                    <View>
+                        <Button
+                            icon="door-open"
+                            onPress={handleCreateAccountWithEmail} style={{ marginTop: 16 }}
+                            mode="contained">
+                            Criar conta
+                        </Button>
+                        <Button
+                            icon="arrow-left"
+                            onPress={() => {
+                                setIsRegistering(!isRegistering)
+                                clearForm()
+                            }}
+                            style={{ marginTop: 16 }}>
+                            Voltar a página de login
+                        </Button>
+                    </View>
+                ) : (
+                    <View>
+                        <Button
+                            icon="door-open"
+                            onPress={handleEmailLogin}
+                            style={{ marginTop: 16 }}
+                            mode="contained">
+                            Acessar
+                        </Button>
+                        <Button
+                            icon="account-plus"
+                            onPress={() => {
+                                setIsRegistering(!isRegistering)  clearForm()
+                            }}
+                            mode="contained"
+                            style={{ marginTop: 16 }}>
+                            Criar conta
+                        </Button>
+                    </View>
+                )}
+            </View>
+        )}
+    </View>
+); 
+   };
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        paddingLeft: 15,
+        paddingRight: 15,
+        paddingBottom: 80,
+    },
+    innerContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    title: {
+        fontWeight: 'bold',
+        marginBottom: 20,
+        color: '#000000',
+    },
+    input: {
+        width: '100%',
+    },
+    inputSenhaSub: {
+        height: 40,
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 16,
+        marginBottom: 8,
+        color: '#000000',
+    },
+    label: {
+        fontSize: 12,
+        marginBottom: 8,
+        color: '#000000',
+    },
+    button: {
+        height: 50,
+        width: '100%',
+        backgroundColor: '#2F80ED',
+        borderRadius: 5,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 20,
+    },
+    buttonText: {
+        color: '#000000',
+    },
+});
+export default withTheme(Login);
