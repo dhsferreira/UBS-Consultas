@@ -248,11 +248,27 @@ module.exports = {
     buscarReceitasPorPaciente: (paci_id) => {
         return new Promise((resolve, reject) => {
             const query = `
-                SELECT p.paci_nome, p.paci_CPF, p.paci_cel, p.paci_email,
-                       r.receita_descricao, r.receita_dia, r.receita_hora, u.ubs_nome, m.medi_nome
-                FROM paciente p
-                INNER JOIN historico_paciente hp ON p.paci_id = hp.paci_id
-                INNER JOIN receita r ON r.receita_id = r.receita_id
+                SELECT u.ubs_nome, u.ubs_indereco, 
+                       CONCAT(SUBSTRING(u.ubs_cel, 1, 2), ' ', 
+                              SUBSTRING(u.ubs_cel, 3, 5), '-', 
+                              SUBSTRING(u.ubs_cel, 8, 4)) AS ubs_cel, -- Formatação do telefone da UBS
+                       m.medi_nome, m.medi_CRM, m.medi_especializa, 
+                       p.paci_nome,
+                       CONCAT(SUBSTRING(p.paci_CPF, 1, 3), '.', 
+                              SUBSTRING(p.paci_CPF, 4, 3), '.', 
+                              SUBSTRING(p.paci_CPF, 7, 3), '-', 
+                              SUBSTRING(p.paci_CPF, 10, 2)) AS paci_CPF,
+                       CONCAT('(', SUBSTRING(p.paci_cel, 1, 2), ') ', 
+                              SUBSTRING(p.paci_cel, 3, 4), '-', 
+                              SUBSTRING(p.paci_cel, 7, 4)) AS paci_cel, -- Formatação do celular do paciente
+                       DATE_FORMAT(p.paci_data_nascimento, '%d-%m-%Y') AS paci_data_nascimento, 
+                       r.medicamento_nome, r.dosagem, r.frequencia_dosagem, r.tempo_uso, 
+                       IFNULL(r.observacao_medica, '') AS observacao_medica, -- Retorna string vazia se NULL
+                       DATE_FORMAT(r.data_emissao, '%d-%m-%Y') AS data_emissao, 
+                       DATE_FORMAT(r.data_validade, '%d-%m-%Y') AS data_validade
+                FROM historico_paciente hp
+                INNER JOIN paciente p ON hp.paci_id = p.paci_id
+                INNER JOIN receita r ON hp.receita_id = r.receita_id
                 INNER JOIN ubs u ON r.ubs_id = u.ubs_id
                 INNER JOIN medico m ON r.medi_id = m.medi_id
                 WHERE p.paci_id = ?`;
@@ -262,10 +278,12 @@ module.exports = {
                     reject({ error: 'Erro ao buscar as receitas e informações do paciente.', details: error });
                     return;
                 }
-                resolve(results); // Retorna os dados do paciente, exames e nome da UBS
+                resolve(results);
             });
         });
     },
+    
+    
 
     buscarVacinasPorPaciente: (paci_id) => {
         return new Promise((resolve, reject) => {
