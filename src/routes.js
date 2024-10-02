@@ -4,7 +4,7 @@ const router = express.Router();
 
 const PacientesController = require('./controllers/PacientesController');
 const SistemaController = require('./controllers/SistemaController');
-const consultaController = require('./controllers/consultaController');
+const MedicoController = require('./controllers/MedicoController');
 const UbsController = require ('./controllers/UbsController');
 const RecepcionistaController = require('./controllers/RecepcionistaController');
 const HorarioController = require('./controllers/HorarioController');
@@ -12,8 +12,8 @@ const HorarioController = require('./controllers/HorarioController');
 
 //----------------------------CONSULTA-----------------------------------//
 router.get('/Consulta/:paci_id', PacientesController.TodasConsultasDeUmPaci);
-router.get('/consultas/:dia', consultaController.buscarConsultasPorData);
-router.post('/Consulta', consultaController.criarConsulta);
+//router.get('/consultas/:dia', consultaController.buscarConsultasPorData);
+
 //router.post('/consul', consultaController.criarConsulta);
 
 
@@ -74,6 +74,8 @@ router.put('/consulta/:consul_id/estado', RecepcionistaController.alterarEstadoC
 router.post('/adicionarHorarioAreaMedica', RecepcionistaController.adicionarHorarioAreaMedica);
 router.get('/buscarHorariosNaoVinculados/:horarios_dia', RecepcionistaController.buscarHorariosNaoVinculados);
 
-
+//----------------------------MEDICO-----------------------------------//
+router.post('/criarReceita', MedicoController.criarReceita);
+router.post('/criarExame', MedicoController.criarExame);
 module.exports = router;
 

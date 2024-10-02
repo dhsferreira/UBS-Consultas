@@ -1,6 +1,86 @@
+const { criarReceita } = require('../controllers/MedicoController');
 const db = require('../db')
 
 module.exports ={
+
+    criarReceita: async (ubs_id, medi_id, paci_id, medicamento_nome, dosagem, frequencia_dosagem, tempo_uso, observacao_medica, data_emissao, data_validade) => {
+        return new Promise((aceito, recusado) => {
+            // Inicia uma transação para garantir que ambos os processos ocorram corretamente
+            db.beginTransaction((transactionError) => {
+                if (transactionError) {
+                    recusado({ error: 'Erro ao iniciar transação.', details: transactionError });
+                    return;
+                }
+    
+                // Insere a nova receita
+                const queryReceita = 'INSERT INTO receita (ubs_id, medi_id, paci_id, medicamento_nome, dosagem, frequencia_dosagem, tempo_uso, observacao_medica, data_emissao, data_validade) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+                db.query(queryReceita, [ubs_id, medi_id, paci_id, medicamento_nome, dosagem, frequencia_dosagem, tempo_uso, observacao_medica, data_emissao, data_validade], (receitaError, receitaResults) => {
+                    if (receitaError) {
+                        db.rollback(() => {
+                            recusado({ error: 'Erro ao criar a receita.', details: receitaError });
+                        });
+                        return;
+                    }
+    
+                    const receitaId = receitaResults.insertId;
+    
+                    // Confirma a transação
+                    db.commit((commitError) => {
+                        if (commitError) {
+                            db.rollback(() => {
+                                recusado({ error: 'Erro ao confirmar a transação.', details: commitError });
+                            });
+                            return;
+                        }
+    
+                        aceito(receitaId); // Retorna o ID da receita criada
+                    });
+                });
+            });
+        });
+    },
+
+    criarExame: async (exame_descricao, exame_dia, exame_hora, ubs_id) => {
+        return new Promise((aceito, recusado) => {
+            // Inicia uma transação para garantir que ambos os processos ocorram corretamente
+            db.beginTransaction((transactionError) => {
+                if (transactionError) {
+                    recusado({ error: 'Erro ao iniciar transação.', details: transactionError });
+                    return;
+                }
+    
+                // Insere o novo exame
+                const queryExame = 'INSERT INTO exame (exame_descricao, exame_dia, exame_hora, ubs_id) VALUES (?, ?, ?, ?)';
+                db.query(queryExame, [exame_descricao, exame_dia, exame_hora, ubs_id], (exameError, exameResults) => {
+                    if (exameError) {
+                        db.rollback(() => {
+                            recusado({ error: 'Erro ao criar o exame.', details: exameError });
+                        });
+                        return;
+                    }
+    
+                    const exameId = exameResults.insertId;
+    
+                    // Confirma a transação
+                    db.commit((commitError) => {
+                        if (commitError) {
+                            db.rollback(() => {
+                                recusado({ error: 'Erro ao confirmar a transação.', details: commitError });
+                            });
+                            return;
+                        }
+    
+                        aceito(exameId); // Retorna o ID do exame criado
+                    });
+                });
+            });
+        });
+    },
+    
+
+
+
+    ///////////////////////////////////////////////////////////////////////////
   umaconsul: (paci_id, data) => {
     return new Promise((aceito, recusado) => {
         let query = `

@@ -1,6 +1,64 @@
-const consultaModel = require('../services/consultaModel');
+const MedicoModel = require('../services/MedicoModel');
+const consultaModel = require('../services/MedicoModel');
 
 module.exports = {
+
+    criarReceita: async (req, res) => {
+        let json = { error: '', result: {} };
+    
+        try {
+            // Extrai os dados da requisição
+            const { ubs_id, medi_id, paci_id, medicamento_nome, dosagem, frequencia_dosagem, tempo_uso, observacao_medica, data_emissao, data_validade } = req.body;
+    
+            // Valida se todos os parâmetros obrigatórios estão presentes
+            if (!ubs_id || !medi_id || !paci_id || !medicamento_nome || !dosagem || !frequencia_dosagem || !tempo_uso || !data_emissao || !data_validade) {
+                json.error = 'Parâmetros obrigatórios faltando.';
+                res.status(400).json(json);
+                return;
+            }
+    
+            // Chama a função do modelo para criar a receita
+            const receita_id = await MedicoModel.criarReceita(ubs_id, medi_id, paci_id, medicamento_nome, dosagem, frequencia_dosagem, tempo_uso, observacao_medica, data_emissao, data_validade);
+    
+            // Formata a resposta com o ID da receita criada
+            json.result = { receita_id };
+            res.json(json);
+        } catch (error) {
+            json.error = 'Erro ao criar a receita.';
+            res.status(500).json(json);
+        }
+    },
+
+    criarExame: async (req, res) => {
+        let json = { error: '', result: {} };
+    
+        try {
+            // Extrai os dados da requisição
+            const { exame_descricao, exame_dia, exame_hora, ubs_id } = req.body;
+    
+            if (!exame_descricao || !exame_dia || !exame_hora || !ubs_id) {
+                json.error = 'Parâmetros obrigatórios faltando.';
+                res.status(400).json(json);
+                return;
+            }
+    
+            // Chama a função do modelo para criar o exame
+            const exame_id = await MedicoModel.criarExame(exame_descricao, exame_dia, exame_hora, ubs_id);
+    
+            // Formata a resposta com o ID do exame criado
+            json.result = { exame_id };
+            res.json(json);
+    
+        } catch (error) {
+            json.error = 'Erro ao criar o exame.';
+            res.status(500).json(json);
+        }
+    },
+
+
+
+
+    ////////////////////////////////////////////////////////////////////////
     umaconsul: async (req, res) => {
         let json = { error: '', result: {} };
 
