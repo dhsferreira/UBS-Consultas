@@ -1,16 +1,14 @@
-// UserTypeDisplay.tsx
-
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Button } from 'react-native';
-import { useUser } from '../UserContext'; // Certifique-se de que o caminho está correto
-import { supabase } from '../Supabase'; // Certifique-se de que o caminho está correto
-import { useNavigation } from '@react-navigation/native'; // Importa o hook de navegação
+import { useUser } from '../UserContext'; 
+import { supabase } from '../Supabase'; 
+import { useNavigation } from '@react-navigation/native'; 
 
 const UserTypeDisplay: React.FC = () => {
     const { user, setUser } = useUser();
     const [userInfo, setUserInfo] = useState(null);
     const [loading, setLoading] = useState(true);
-    const navigation = useNavigation(); // Hook de navegação
+    const navigation = useNavigation(); 
 
     useEffect(() => {
         const fetchUserInfo = async () => {
@@ -28,6 +26,12 @@ const UserTypeDisplay: React.FC = () => {
                         .from('paciente')
                         .select('*')
                         .eq('paci_id', user.id)
+                        .single());
+                } else if (user.type === 'Medico') {
+                    ({ data, error } = await supabase
+                        .from('medico')
+                        .select('*')
+                        .eq('medi_id', user.id)
                         .single());
                 }
 
@@ -47,8 +51,8 @@ const UserTypeDisplay: React.FC = () => {
     }, [user.id, user.type]);
 
     const handleLogout = () => {
-        setUser({ id: null, type: '' }); // Limpa o estado do usuário
-        navigation.navigate('Login'); // Navega para a tela de login
+        setUser({ id: null, type: '' }); 
+        navigation.navigate('Login'); 
     };
 
     if (loading) {
@@ -65,9 +69,8 @@ const UserTypeDisplay: React.FC = () => {
                 <Text style={styles.text}>Recepcionista: {userInfo.recep_nome}</Text>
                 <Text style={styles.text}>Email: {userInfo.recep_email}</Text>
                 <Text style={styles.text}>Telefone: {userInfo.recep_cel}</Text>
-                <Text style={styles.text}>CPF: {userInfo.recep_cpf}</Text>
+                <Text style={styles.text}>CPF: {userInfo.recep_CPF}</Text>
                 <Text style={styles.text}>Senha: {userInfo.recep_senha}</Text>
-                {/* Adicione outros campos necessários */}
                 <Button title="Sair" onPress={handleLogout} color="#FF6347" />
             </View>
         );
@@ -79,9 +82,22 @@ const UserTypeDisplay: React.FC = () => {
                 <Text style={styles.text}>Paciente: {userInfo.paci_nome}</Text>
                 <Text style={styles.text}>Email: {userInfo.paci_email}</Text>
                 <Text style={styles.text}>Telefone: {userInfo.paci_cel}</Text>
-                <Text style={styles.text}>CPF: {userInfo.paci_cpf}</Text>
+                <Text style={styles.text}>CPF: {userInfo.paci_CPF}</Text>
                 <Text style={styles.text}>Senha: {userInfo.paci_senha}</Text>
-                {/* Adicione outros campos necessários */}
+                <Button title="Sair" onPress={handleLogout} color="#FF6347" />
+            </View>
+        );
+    }
+
+    if (user.type === 'Medico' && userInfo) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.text}>Médico: {userInfo.medi_nome}</Text>
+                <Text style={styles.text}>Email: {userInfo.medi_email}</Text>
+                <Text style={styles.text}>Telefone: {userInfo.medi_cel}</Text>
+                <Text style={styles.text}>CRM: {userInfo.medi_CRM}</Text>
+                <Text style={styles.text}>Especialização: {userInfo.medi_especializa}</Text>
+                <Text style={styles.text}>Senha: {userInfo.medi_senha}</Text>
                 <Button title="Sair" onPress={handleLogout} color="#FF6347" />
             </View>
         );
