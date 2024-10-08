@@ -48,10 +48,9 @@ router.get('/horario/horario/:ubs_id/:area_nome/:horarios_dia', HorarioControlle
 
 //##################################################################################//
 //#################################################################################//
-// Rota para adicionar novos dias e horários
-// Rota para adicionar novos dias e horários
+
 router.post('/horarios/adicionar', HorarioController.adicionarDiasHorarios);
-// Rota para remover dias e horários passados
+
 router.delete('/horarios/remover/passados', HorarioController.removerDiasHorariosPassados);
 //----------------------------SISTEMA GLOBAL-----------------------------------//
 router.get('/areas/:ubs_id', SistemaController.buscarAreasPorUBS); //#
@@ -63,8 +62,8 @@ router.get('/Ubs/:id/nome', SistemaController.buscarNomePorId);//#
 //----------------------------PACIENTE-----------------------------------//
 router.post('/Paciente', PacientesController.inserir);//#
 router.put('/paciente/:paci_id', PacientesController.alterarDadosPaciente);//#
-router.get('/Consulta/:paci_id', PacientesController.TodasConsultasDeUmPaci);//#
-router.post('/consultas/criar', PacientesController.criarConsulta);//#
+router.get('/Consulta/:paci_id', PacientesController.TodasConsultasDeUmPaci);//#*
+router.post('/consultas/criar', PacientesController.criarConsulta);//#*
 router.get('/paciente/:paci_id/exames', PacientesController.listarExamesPorPaciente);//#
 router.get('/paciente/:paci_id/receitas', PacientesController.listarReceitasPorPaciente);//#
 router.get('/paciente/:paci_id/vacinas', PacientesController.listarVacinasPorPaciente);//#
