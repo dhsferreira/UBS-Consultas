@@ -1,5 +1,6 @@
 const db = require('../db');
 
+
 module.exports = {
     buscarUm: (area_id) => {
         return new Promise((aceito, recusado) => {
@@ -79,6 +80,7 @@ module.exports = {
             );
         });
     },
+
     buscarAreaIdPorNome: (area_nome) => {
         return new Promise((aceito, recusado) => {
             db.query(
@@ -139,6 +141,7 @@ module.exports = {
             }
         });
     },
+
     buscarHorariosPorUbsAreaEDia: (ubs_id, area_nome, horarios_dia) => {
         return new Promise(async (aceito, recusado) => {
             try {
@@ -169,6 +172,79 @@ module.exports = {
                 recusado({ error: 'Erro ao buscar os horários.', details: error });
             }
         });
-    }
+    },
+
+    // Função para adicionar novos dias e horários
+    adicionarDiasHorarios: (diasParaAdicionar, horariosPorDia) => {
+        return new Promise((resolve, reject) => {
+            const promises = []; // Armazena todas as promessas de inserção
+            for (let dia = 1; dia <= diasParaAdicionar; dia++) {
+                const novaData = new Date();
+                novaData.setDate(novaData.getDate() + dia);
+                const novaDataFormatada = novaData.toISOString().split('T')[0];
+
+                horariosPorDia.forEach(horario => {
+                    const query = 'INSERT INTO datas_horarios (horarios_dia, horarios_horarios) VALUES (?, ?)';
+                    const promise = new Promise((res, rej) => {
+                        db.query(query, [novaDataFormatada, horario], (err, results) => {
+                            if (err) {
+                                rej(err);
+                                return;
+                            }
+                            res();
+                        });
+                    });
+                    promises.push(promise); // Adiciona a promessa ao array
+                });
+            }
+
+            // Aguarda todas as promessas serem resolvidas
+            Promise.all(promises)
+                .then(() => resolve('Dias e horários adicionados com sucesso'))
+                .catch(reject);
+        });
+    },
+
+    // Função para remover dias e horários passados
+    removerDiasHorariosPassados: () => {
+        return new Promise((resolve, reject) => {
+            const query = `
+                DELETE FROM datas_horarios
+                WHERE horarios_dia < CURDATE()
+                OR (horarios_dia = CURDATE() AND horarios_horarios < CURTIME())
+            `;
     
+            db.query(query, (err, results) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve('Dias e horários passados removidos com sucesso (exclusão em cascata aplicada)');
+            });
+        });
+    },
+    
+    
+
+    // Função para verificar a disponibilidade de horários
+    verificarDisponibilidade: (horarioId) => {
+        return new Promise((resolve, reject) => {
+            const query = `
+                SELECT horarios_dispo FROM datas_horarios
+                WHERE horarios_id = ?
+            `;
+            db.query(query, [horarioId], (err, results) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                if (results.length > 0) {
+                    resolve(results[0].horarios_dispo);
+                } else {
+                    reject(new Error('Horário não encontrado.'));
+                }
+            });
+        });
+    },
+
 };

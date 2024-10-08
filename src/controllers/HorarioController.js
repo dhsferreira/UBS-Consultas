@@ -43,7 +43,7 @@ module.exports = {
             res.status(500).json(json);
         }
     },
-    
+
     buscarHorariosPorAreaEUbs: async (req, res) => {
         let json = { error: '', result: [] };
 
@@ -59,6 +59,7 @@ module.exports = {
             res.status(500).json(json);
         }
     },
+
     buscarHorariosDiaPorUbsEAreaNome: async (req, res) => {
         let json = { error: '', result: [] };
 
@@ -78,6 +79,7 @@ module.exports = {
             res.status(500).json(json);
         }
     },
+
     buscarHorariosPorUbsAreaEDia: async (req, res) => {
         let json = { error: '', result: [] };
 
@@ -93,5 +95,58 @@ module.exports = {
             json.error = 'Erro ao buscar os horários.';
             res.status(500).json(json);
         }
-    }
+    },
+
+    // Função para adicionar novos dias e horários
+    adicionarDiasHorarios: async (req, res) => {
+        let json = { error: '', result: '' };
+
+        try {
+            const { diasParaAdicionar, horariosPorDia } = req.body;
+
+            // Verifica se diasParaAdicionar e horariosPorDia foram enviados no corpo da requisição
+            if (typeof diasParaAdicionar !== 'number' || !Array.isArray(horariosPorDia)) {
+                json.error = 'Dados inválidos. Envie diasParaAdicionar e horariosPorDia.';
+                return res.status(400).json(json);
+            }
+
+            let resultado = await HorarioModel.adicionarDiasHorarios(diasParaAdicionar, horariosPorDia);
+            json.result = resultado;
+            res.json(json);
+        } catch (error) {
+            json.error = 'Erro ao adicionar dias e horários.';
+            res.status(500).json(json);
+        }
+    },
+
+    // Função para remover dias e horários passados
+    removerDiasHorariosPassados: async (req, res) => {
+        let json = { error: '', result: '' };
+
+        try {
+            let resultado = await HorarioModel.removerDiasHorariosPassados();
+            json.result = resultado;
+            res.json(json);
+        } catch (error) {
+            json.error = 'Erro ao remover dias e horários passados.';
+            res.status(500).json(json);
+        }
+    },
+
+    // Função para verificar a disponibilidade de horários
+    verificarDisponibilidade: async (req, res) => {
+        let json = { error: '', result: '' };
+
+        try {
+            let horarioId = req.params.horarioId;
+            let disponibilidade = await HorarioModel.verificarDisponibilidade(horarioId);
+            json.result = disponibilidade;
+            res.json(json);
+        } catch (error) {
+            json.error = 'Erro ao verificar a disponibilidade.';
+            res.status(500).json(json);
+        }
+    },
+
+  
 };

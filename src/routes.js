@@ -10,6 +10,7 @@ const RecepcionistaController = require('./controllers/RecepcionistaController')
 const HorarioController = require('./controllers/HorarioController');
 
 
+
 //----------------------------CONSULTA-----------------------------------//
 router.get('/Consulta/:paci_id', PacientesController.TodasConsultasDeUmPaci);
 //router.get('/consultas/:dia', consultaController.buscarConsultasPorData);
@@ -47,8 +48,11 @@ router.get('/horario/horario/:ubs_id/:area_nome/:horarios_dia', HorarioControlle
 
 //##################################################################################//
 //#################################################################################//
-
-
+// Rota para adicionar novos dias e horários
+// Rota para adicionar novos dias e horários
+router.post('/horarios/adicionar', HorarioController.adicionarDiasHorarios);
+// Rota para remover dias e horários passados
+router.delete('/horarios/remover/passados', HorarioController.removerDiasHorariosPassados);
 //----------------------------SISTEMA GLOBAL-----------------------------------//
 router.get('/areas/:ubs_id', SistemaController.buscarAreasPorUBS); //#
 router.get('/ubs/:ubs_id/areas/:area_nome/horarios', SistemaController.buscarHorariosDiaPorUbsEAreaNome);//#
