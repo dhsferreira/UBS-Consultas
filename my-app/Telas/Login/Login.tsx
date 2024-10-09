@@ -33,7 +33,7 @@ const SignInScreen = ({ navigation }: SignInScreenProps) => {
                 userTypeError = recepcionistaError;
                 isUserTypeValid = recepcionistaData && recepcionistaData.length > 0;
                 userId = isUserTypeValid ? recepcionistaData[0].recep_id : null;
-            } else {
+            } else if (radioValue === 'Paciente') {
                 const { data: pacienteData, error: pacienteError } = await supabase
                     .from('paciente')
                     .select('paci_id')
@@ -42,6 +42,20 @@ const SignInScreen = ({ navigation }: SignInScreenProps) => {
                 userTypeError = pacienteError;
                 isUserTypeValid = pacienteData && pacienteData.length > 0;
                 userId = isUserTypeValid ? pacienteData[0].paci_id : null;
+            } else if (radioValue === 'Medico') { // Nova lógica para médico
+                const { data: medicoData, error: medicoError } = await supabase
+                    .from('medico')
+                    .select('medi_id') // Se você quiser mais campos, adicione aqui
+                    .eq('medi_email', email.trim());
+
+                userTypeError = medicoError;
+                isUserTypeValid = medicoData && medicoData.length > 0;
+                userId = isUserTypeValid ? medicoData[0].medi_id : null;
+
+                // Log das informações do médico
+                if (medicoData) {
+                    console.log('Dados do médico:', medicoData);
+                }
             }
 
             if (userTypeError) {
@@ -93,12 +107,16 @@ const SignInScreen = ({ navigation }: SignInScreenProps) => {
             <View style={styles.radioGroup}>
                 <RadioButton.Group onValueChange={value => setRadioValue(value)} value={radioValue}>
                     <View style={styles.radioButtonContainer}>
+                        <RadioButton.Android value="Paciente" />
+                        <Text style={styles.radioButtonText}>Paciente</Text>
+                    </View>
+                    <View style={styles.radioButtonContainer}>
                         <RadioButton.Android value="Recepcionista" />
                         <Text style={styles.radioButtonText}>Recepcionista</Text>
                     </View>
                     <View style={styles.radioButtonContainer}>
-                        <RadioButton.Android value="Paciente" />
-                        <Text style={styles.radioButtonText}>Paciente</Text>
+                        <RadioButton.Android value="Medico" />
+                        <Text style={styles.radioButtonText}>Médico</Text>
                     </View>
                 </RadioButton.Group>
             </View>

@@ -1,23 +1,24 @@
 import React from 'react';
 import { createDrawerNavigator } from '@react-navigation/drawer';
-import LoginScreen from '../Login/Login'; // Verifique o caminho correto
-import CadastroScreen from '../Cadastro/Cadastro'; // Verifique o caminho correto
-import NoticiasScreen from '../Noticias/telaNoticias'; // Verifique o caminho correto
-import ConsultasScreen from '../Consultas/Consultas'; // Verifique o caminho correto
-import AgendarScreen from '../Agendar/Agendar'; // Verifique o caminho correto
+import LoginScreen from '../Login/Login'; 
+import CadastroScreen from '../Cadastro/Cadastro'; 
+import NoticiasScreen from '../Noticias/telaNoticias'; 
+import ConsultasScreen from '../Consultas/Consultas'; 
+import AgendarScreen from '../Agendar/Agendar'; 
 import CustomDrawerContent from './CustomDrawerContent';
-import UserInfo from '../UserInfo'; // Importa o novo componente
-import UserScreen from '../Usuario/UserScreen'; // Importa o novo componente
-import ConsultaRecepScreen from '../Consultas Recep/ConsultasRecep'; // Importa o novo componente
-import AgendarHoraScreen from '../AgendarHora/AgendarHora'; // Importa o novo componente
+import UserInfo from '../UserInfo'; 
+import UserScreen from '../Usuario/UserScreen'; 
+import ConsultaRecepScreen from '../Consultas Recep/ConsultasRecep'; 
+import AgendarHoraScreen from '../AgendarHora/AgendarHora'; 
+import ConsultaMedScreen from '../Consultas Med/ConsultasMed'; 
 
-import { Ionicons } from '@expo/vector-icons'; // Importando ícones do Expo
-import { useUser } from '../UserContext'; // Importe o hook useUser
+import { Ionicons } from '@expo/vector-icons'; 
+import { useUser } from '../UserContext'; 
 
 const Drawer = createDrawerNavigator();
 
 export default function DrawerRoutes() {
-  const { user } = useUser(); // Pegue o tipo de usuário do contexto
+  const { user } = useUser(); 
 
   return (
     <Drawer.Navigator
@@ -91,7 +92,6 @@ export default function DrawerRoutes() {
               ),
             }}
           />
-
         </>
       ) : user.type === 'Recepcionista' ? (
         <>
@@ -115,8 +115,7 @@ export default function DrawerRoutes() {
               ),
             }}
           />
-
-<Drawer.Screen
+          <Drawer.Screen
             name="Consul_Recep"
             component={ConsultaRecepScreen}
             options={{
@@ -126,8 +125,7 @@ export default function DrawerRoutes() {
               ),
             }}
           />
-
-<Drawer.Screen
+          <Drawer.Screen
             name="AgendarHora_Recep"
             component={AgendarHoraScreen}
             options={{
@@ -138,10 +136,40 @@ export default function DrawerRoutes() {
             }}
           />
         </>
-
-        
-      ) : null /* Caso o user.type não seja reconhecido */
-      }
+      ) : user.type === 'Medico' ? (
+        <>
+          <Drawer.Screen
+            name="Noticias"
+            component={NoticiasScreen}
+            options={{
+              drawerLabel: 'Noticias',
+              drawerIcon: ({ color, size }) => (
+                <Ionicons name="person" size={size} color={color} />
+              ),
+            }}
+          />
+          <Drawer.Screen
+            name="usuario"
+            component={UserScreen}
+            options={{
+              drawerLabel: 'usuario',
+              drawerIcon: ({ color, size }) => (
+                <Ionicons name="person" size={size} color={color} />
+              ),
+            }}
+          />
+          <Drawer.Screen
+            name="Consul_med"
+            component={ConsultaMedScreen}
+            options={{
+              drawerLabel: 'Consultas',
+              drawerIcon: ({ color, size }) => (
+                <Ionicons name="person" size={size} color={color} />
+              ),
+            }}
+          />
+        </>
+      ) : null}
     </Drawer.Navigator>
   );
 }
