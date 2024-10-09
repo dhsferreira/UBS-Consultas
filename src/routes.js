@@ -64,12 +64,12 @@ router.post('/Paciente', PacientesController.inserir);//#
 router.put('/paciente/:paci_id', PacientesController.alterarDadosPaciente);//#
 router.get('/Consulta/:paci_id', PacientesController.TodasConsultasDeUmPaci);//#*
 router.post('/consultas/criar', PacientesController.criarConsulta);//#*
-router.get('/paciente/:paci_id/exames', PacientesController.listarExamesPorPaciente);//#
-router.get('/paciente/:paci_id/receitas', PacientesController.listarReceitasPorPaciente);//#
+router.get('/paciente/:paci_id/exames', PacientesController.listarExamesPorPaciente);//#*
+router.get('/paciente/:paci_id/receitas', PacientesController.listarReceitasPorPaciente);//#*
 router.get('/paciente/:paci_id/vacinas', PacientesController.listarVacinasPorPaciente);//#
 
 //----------------------------RECEPCIONISTA-----------------------------------//
-router.get('/Consulta/ubs/:ubs_id', RecepcionistaController.TodasConsultasDeUmaUbs);//#
+router.get('/Consulta/ubs/:ubs_id', RecepcionistaController.TodasConsultasDeUmaUbs);//#*
 router.get('/consultas/ubs/:ubs_id/horario_dia/:horarios_dia', RecepcionistaController.TodasConsultasDeUmaUbsPorDia);
 router.get('/consultas/ubs/:ubs_id/area/:area_nome', RecepcionistaController.TodasConsultasDeUbsArea);
 router.get('/consultas/ubs/:ubs_id/area/:area_nome/dia/:dia', RecepcionistaController.TodasConsultasDeUbsAreaDia);

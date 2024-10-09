@@ -12,7 +12,10 @@ module.exports = {
             let query = `
                 SELECT 
                     paciente.paci_nome, 
-                    paciente.paci_cpf, 
+                    CONCAT(SUBSTRING(paciente.paci_cpf, 1, 3), '.', 
+                           SUBSTRING(paciente.paci_cpf, 4, 3), '.', 
+                           SUBSTRING(paciente.paci_cpf, 7, 3), '-', 
+                           SUBSTRING(paciente.paci_cpf, 10, 2)) AS paci_cpf,
                     ubs.ubs_nome, 
                     areas_medicas.area_nome, 
                     DATE_FORMAT(datas_horarios.horarios_dia, '%d/%m/%Y') AS horarios_dia, 
@@ -40,7 +43,7 @@ module.exports = {
     
                 const consultas = results.map(consulta => ({
                     paci_nome: consulta.paci_nome,
-                    paci_cpf: consulta.paci_cpf,
+                    paci_cpf: consulta.paci_cpf, // CPF formatado
                     ubs_nome: consulta.ubs_nome,
                     area_nome: consulta.area_nome,
                     horarios_dia: consulta.horarios_dia, // Data já formatada
@@ -52,6 +55,7 @@ module.exports = {
             });
         });
     },
+    
     TodasConsultasDeUmaUbsPorDia: (ubs_id, horarios_dia) => {
         return new Promise((aceito, recusado) => {
             let query = `
