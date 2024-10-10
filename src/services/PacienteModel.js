@@ -108,10 +108,7 @@ module.exports = {
             let query = `
                 SELECT 
                     paciente.paci_nome, 
-                    CONCAT(SUBSTRING(paciente.paci_cpf, 1, 3), '.', 
-                           SUBSTRING(paciente.paci_cpf, 4, 3), '.', 
-                           SUBSTRING(paciente.paci_cpf, 7, 3), '-', 
-                           SUBSTRING(paciente.paci_cpf, 10, 2)) AS paci_cpf,
+                    paciente.paci_cpf, 
                     ubs.ubs_nome, 
                     areas_medicas.area_nome, 
                     DATE_FORMAT(datas_horarios.horarios_dia, '%d/%m/%Y') AS horarios_dia, 
@@ -139,7 +136,7 @@ module.exports = {
     
                 const consultas = results.map(consulta => ({
                     paci_nome: consulta.paci_nome,
-                    paci_cpf: consulta.paci_cpf, // CPF formatado
+                    paci_cpf: consulta.paci_cpf,
                     ubs_nome: consulta.ubs_nome,
                     area_nome: consulta.area_nome,
                     horarios_dia: consulta.horarios_dia, // Data já formatada
@@ -151,7 +148,7 @@ module.exports = {
             });
         });
     },
-    
+
     criarConsulta: async (paci_id, ubs_id, area_id, horarios_id, consul_estado) => {
         return new Promise((aceito, recusado) => {
             // Inicia uma transação para garantir que ambos os processos ocorram corretamente
@@ -230,24 +227,14 @@ module.exports = {
     buscarExamesPorPaciente: (paci_id) => {
         return new Promise((resolve, reject) => {
             const query = `
-                SELECT p.paci_nome, 
-                       CONCAT(SUBSTRING(p.paci_CPF, 1, 3), '.', 
-                              SUBSTRING(p.paci_CPF, 4, 3), '.', 
-                              SUBSTRING(p.paci_CPF, 7, 3), '-', 
-                              SUBSTRING(p.paci_CPF, 10, 2)) AS paci_CPF,
-                       CONCAT('(', SUBSTRING(p.paci_cel, 1, 2), ') ', 
-                              SUBSTRING(p.paci_cel, 3, 4), '-', 
-                              SUBSTRING(p.paci_cel, 7, 4)) AS paci_cel,
-                       p.paci_email,
-                       e.exame_descricao, 
-                       DATE_FORMAT(e.exame_dia, '%Y-%m-%d') AS exame_dia, 
-                       DATE_FORMAT(e.exame_hora, '%H:%i') AS exame_hora,
-                       u.ubs_nome
+                SELECT p.paci_nome, p.paci_CPF, p.paci_cel, p.paci_email,
+                       e.exame_descricao, e.exame_dia, e.exame_hora, u.ubs_nome
                 FROM paciente p
-                INNER JOIN exame e ON p.paci_id = e.paci_id
+                INNER JOIN historico_paciente hp ON p.paci_id = hp.paci_id
+                INNER JOIN exame e ON e.exame_id = hp.exame_id
                 INNER JOIN ubs u ON e.ubs_id = u.ubs_id
                 WHERE p.paci_id = ?`;
-            
+    
             db.query(query, [paci_id], (error, results) => {
                 if (error) {
                     reject({ error: 'Erro ao buscar os exames e informações do paciente.', details: error });
@@ -257,8 +244,6 @@ module.exports = {
             });
         });
     },
-    
-    
 
     buscarReceitasPorPaciente: (paci_id) => {
         return new Promise((resolve, reject) => {
@@ -281,12 +266,13 @@ module.exports = {
                        IFNULL(r.observacao_medica, '') AS observacao_medica, -- Retorna string vazia se NULL
                        DATE_FORMAT(r.data_emissao, '%d-%m-%Y') AS data_emissao, 
                        DATE_FORMAT(r.data_validade, '%d-%m-%Y') AS data_validade
-                FROM paciente p
-                INNER JOIN receita r ON p.paci_id = r.paci_id
+                FROM historico_paciente hp
+                INNER JOIN paciente p ON hp.paci_id = p.paci_id
+                INNER JOIN receita r ON hp.receita_id = r.receita_id
                 INNER JOIN ubs u ON r.ubs_id = u.ubs_id
                 INNER JOIN medico m ON r.medi_id = m.medi_id
                 WHERE p.paci_id = ?`;
-        
+    
             db.query(query, [paci_id], (error, results) => {
                 if (error) {
                     reject({ error: 'Erro ao buscar as receitas e informações do paciente.', details: error });
@@ -298,40 +284,27 @@ module.exports = {
     },
     
     
-    
 
     buscarVacinasPorPaciente: (paci_id) => {
         return new Promise((resolve, reject) => {
             const query = `
-                SELECT p.paci_nome, 
-                       CONCAT(SUBSTRING(p.paci_CPF, 1, 3), '.', 
-                              SUBSTRING(p.paci_CPF, 4, 3), '.', 
-                              SUBSTRING(p.paci_CPF, 7, 3), '-', 
-                              SUBSTRING(p.paci_CPF, 10, 2)) AS paci_CPF,
-                       CONCAT('(', SUBSTRING(p.paci_cel, 1, 2), ') ', 
-                              SUBSTRING(p.paci_cel, 3, 4), '-', 
-                              SUBSTRING(p.paci_cel, 7, 4)) AS paci_cel,
-                       p.paci_email,
-                       v.vacina_descricao, 
-                       DATE_FORMAT(v.vacina_dia, '%Y-%m-%d') AS vacina_dia, 
-                       DATE_FORMAT(v.vacina_hora, '%H:%i') AS vacina_hora,
-                       u.ubs_nome
+                SELECT p.paci_nome, p.paci_CPF, p.paci_cel, p.paci_email,
+                       v.vacina_descricao, v.vacina_dia, v.vacina_hora, u.ubs_nome
                 FROM paciente p
-                INNER JOIN vacina v ON p.paci_id = v.paci_id
+                INNER JOIN historico_paciente hp ON p.paci_id = hp.paci_id
+                INNER JOIN vacina v ON v.vacina_id = hp.vacina_id
                 INNER JOIN ubs u ON v.ubs_id = u.ubs_id
                 WHERE p.paci_id = ?`;
-            
+    
             db.query(query, [paci_id], (error, results) => {
                 if (error) {
-                    reject({ error: 'Erro ao buscar as vacinas e informações do paciente.', details: error });
+                    reject({ error: 'Erro ao buscar os exames e informações do paciente.', details: error });
                     return;
                 }
-                resolve(results); // Retorna os dados do paciente, vacinas e nome da UBS
+                resolve(results); // Retorna os dados do paciente, exames e nome da UBS
             });
         });
     },
-    
-    
     
      
 };

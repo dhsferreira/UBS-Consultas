@@ -35,7 +35,7 @@ export default function HomeScreen() {
           style={styles.centerImage}
         />
       </View>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {images.map((item, index) => (
           <TouchableOpacity 
             key={index} 
