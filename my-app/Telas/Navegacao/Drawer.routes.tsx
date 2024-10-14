@@ -11,6 +11,8 @@ import UserScreen from '../Usuario/UserScreen';
 import ConsultaRecepScreen from '../Consultas Recep/ConsultasRecep'; 
 import AgendarHoraScreen from '../AgendarHora/AgendarHora'; 
 import ConsultaMedScreen from '../Consultas Med/ConsultasMed'; 
+import ExamesMedScreen from '../Exames Med/ExamesMed'; 
+
 
 import { Ionicons } from '@expo/vector-icons'; 
 import { useUser } from '../UserContext'; 
@@ -166,6 +168,18 @@ export default function DrawerRoutes() {
               drawerIcon: ({ color, size }) => (
                 <Ionicons name="person" size={size} color={color} />
               ),
+            }}
+          />
+
+<Drawer.Screen
+            name="Exames"
+            component={ExamesMedScreen}
+            options={{
+              drawerLabel: 'Exames',
+              drawerIcon: ({ color, size }) => (
+                <Ionicons name="document-text" size={size} color={color} />
+              ),
+              swipeEnabled: false,
             }}
           />
         </>

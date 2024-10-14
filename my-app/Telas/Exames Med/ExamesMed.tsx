@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'; 
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Image, TouchableOpacity, Text, ScrollView, ActivityIndicator, Modal, TouchableWithoutFeedback } from 'react-native';
 import { TextInputMask } from 'react-native-masked-text';
 import { useNavigation, DrawerActions, useFocusEffect } from '@react-navigation/native';
@@ -37,15 +37,15 @@ const Consultas = () => {
   const fetchUbsId = async () => {
     try {
       const { data, error } = await supabase
-        .from('recepcionista')
+        .from('medico')  // Alterado de 'recepcionista' para 'medico'
         .select('ubs_id')
-        .eq('recep_id', user.id)
+        .eq('medi_id', user.id)  // Agora filtrando pelo 'medi_id' do médico logado
         .single();
 
       if (error) {
         throw error;
       }
-
+      
       setUbsId(data.ubs_id);
     } catch (error) {
       console.error('Erro ao buscar ubs_id:', error);
@@ -55,10 +55,24 @@ const Consultas = () => {
   const fetchConsultas = async (selectedDate?: string) => {
     try {
       if (ubsId !== null) {
-        let url = `/consultas/ubs/${ubsId}/area/${user.medi_area}`;
+        // Primeiro, busque o area_nome da tabela medico
+        const { data: medicoData, error: medicoError } = await supabase
+          .from('medico')
+          .select('medi_area') // A coluna medi_area deve ser o nome da área
+          .eq('medi_id', user.id) // Aqui, estou assumindo que você tem medi_id no contexto do usuário
+          .single();
+  
+        if (medicoError) {
+          throw medicoError;
+        }
+  
+        const areaNome = medicoData.medi_area; // Obtenha o area_nome
+  
+        let url = `http://192.168.137.1:3000/api/consultas/ubs/${ubsId}/area/${areaNome}`;
         if (selectedDate) {
           url += `?data=${selectedDate}`;
         }
+        
         const response = await axios.get(url);
         const consultasData: Consulta[] = response.data.result;
         setConsultas(consultasData);
@@ -70,6 +84,7 @@ const Consultas = () => {
       setLoading(false);
     }
   };
+  
 
   useFocusEffect(
     useCallback(() => {
@@ -107,13 +122,13 @@ const Consultas = () => {
     let filtered = [];
     switch (status) {
       case 'agendada':
-        filtered = consultas.filter(consulta => consulta.consul_estado === 'Em espera'); // Corrigido consul_estatos para consul_estado
+        filtered = consultas.filter(consulta => consulta.consul_estado === 'Em espera');
         break;
       case 'realizada':
-        filtered = consultas.filter(consulta => consulta.consul_estado === 'Finalizada'); // Corrigido consul_estatos para consul_estado
+        filtered = consultas.filter(consulta => consulta.consul_estado === 'Finalizada');
         break;
       case 'cancelada':
-        filtered = consultas.filter(consulta => consulta.consul_estado === 'Cancelada'); // Corrigido consul_estatos para consul_estado
+        filtered = consultas.filter(consulta => consulta.consul_estado === 'Cancelada');
         break;
       case 'todas':
         filtered = consultas;
@@ -122,7 +137,7 @@ const Consultas = () => {
         filtered = consultas;
         break;
     }
-    filtered.sort((a, b) => (a.consul_estado === 'Em andamento' ? -1 : 1)); // Corrigido consul_estatos para consul_estado
+    filtered.sort((a, b) => (a.consul_estado === 'Em andamento' ? -1 : 1));
     setFilteredConsultas(filtered);
   };
 
@@ -140,8 +155,8 @@ const Consultas = () => {
   };
 
   const handleExames = (consulta: Consulta) => {
-    // Lógica para navegar ou buscar exames relacionados à consulta
-    console.log('Navegando para exames de:', consulta);
+    // Navegar para a tela de exames passando os dados da consulta
+    navigation.navigate('Exames', { consulta });
   };
 
   const handleReceitas = (consulta: Consulta) => {
@@ -235,17 +250,19 @@ const Consultas = () => {
         {filteredConsultas.map((consulta, index) => (
           <View key={index} style={getCardStyle(consulta.consul_estado)}>
             <Text style={styles.cardText}>Nome: {consulta.paci_nome}</Text>
+            <Text style={styles.cardText}>CPF: {consulta.paci_cpf}</Text>
+            <Text style={styles.cardText}>Área Médica: {consulta.area_nome}</Text>
             <Text style={styles.cardText}>UBS: {consulta.ubs_nome}</Text>
             <Text style={styles.cardText}>Data: {consulta.horarios_dia}</Text>
             <Text style={styles.cardText}>Horário: {consulta.horarios_horarios}</Text>
-            <Text style={styles.cardText}>Área de Atendimento: {consulta.area_nome}</Text>
             <Text style={styles.cardText}>Status: {consulta.consul_estado}</Text>
-            
-            {/* Botões para Exames e Receitas */}
+
+            {/* Botões de ação */}
             <View style={styles.buttonContainer}>
               <TouchableOpacity style={styles.button} onPress={() => handleExames(consulta)}>
                 <Text style={styles.buttonText}>Exames</Text>
               </TouchableOpacity>
+
               <TouchableOpacity style={styles.button} onPress={() => handleReceitas(consulta)}>
                 <Text style={styles.buttonText}>Receitas</Text>
               </TouchableOpacity>
