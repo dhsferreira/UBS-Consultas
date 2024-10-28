@@ -3,6 +3,32 @@ const consultaModel = require('../services/MedicoModel');
 
 module.exports = {
 
+    alterarDadosMedico: async (req, res) => {
+        let json = { error: '', result: {} };
+    
+        try {
+            const { medi_id } = req.params;
+            const dadosMedico = req.body;
+    
+            if (!medi_id) {
+                json.error = 'ID do médico não fornecido';
+                res.status(400).json(json);
+                return;
+            }
+    
+            // Chama a função do modelo para alterar os dados do médico
+            await MedicoModel.alterarDadosMedico(medi_id, dadosMedico);
+    
+            json.result = 'Dados do médico alterados com sucesso';
+            res.json(json);
+        } catch (error) {
+            console.error('Erro ao processar solicitação de alteração de dados do médico:', error);
+            json.error = 'Erro ao processar solicitação de alteração de dados do médico';
+            res.status(500).json(json);
+        }
+    },
+    
+
     criarReceita: async (req, res) => {
         let json = { error: '', result: {} };
     

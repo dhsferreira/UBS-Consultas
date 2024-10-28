@@ -1,7 +1,60 @@
 const { criarReceita } = require('../controllers/MedicoController');
-const db = require('../db')
+const db = require('../db');
+const { createClient } = require('@supabase/supabase-js');
+
+// Configuração do Supabase diretamente no model
+const supabaseUrl = 'https://mvxazgyzgiuivzngdbov.supabase.co'; // Substitua pela URL do seu projeto
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12eGF6Z3l6Z2l1aXZ6bmdkYm92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjc5ODcyMjMsImV4cCI6MjA0MzU2MzIyM30.Qg05UnatADTemLtofxUeI-b7CQqt3gb8bVNmuO7q5n0'; // Substitua pela sua chave de API
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 module.exports ={
+    alterarDadosMedico: (medi_id, dados) => {
+        return new Promise((aceito, recusado) => {
+            const fieldsToUpdate = [];
+            const valuesToUpdate = [];
+    
+            Object.keys(dados).forEach(key => {
+                if (dados[key] !== undefined) {
+                    fieldsToUpdate.push(`${key} = ?`);
+                    valuesToUpdate.push(dados[key]);
+                }
+            });
+    
+            valuesToUpdate.push(medi_id);
+    
+            // Atualizando no MySQL
+            db.query(
+                `UPDATE medico SET ${fieldsToUpdate.join(', ')} WHERE medi_id = ?`,
+                valuesToUpdate,
+                async (error, results) => {
+                    if (error) {
+                        console.error('Erro ao executar consulta de alteração de dados do médico no MySQL:', error);
+                        recusado(error);
+                        return;
+                    }
+    
+                    console.log('Dados do médico alterados no MySQL com sucesso:', results);
+    
+                    // Atualizando também no Supabase
+                    const { data, error: supabaseError } = await supabase
+                        .from('medico')
+                        .update(dados)
+                        .eq('medi_id', medi_id);
+    
+                    if (supabaseError) {
+                        console.error('Erro ao atualizar dados do médico no Supabase:', supabaseError);
+                        recusado(supabaseError);
+                        return;
+                    }
+    
+                    console.log('Dados do médico alterados no Supabase com sucesso:', data);
+                    aceito(results);
+                }
+            );
+        });
+    },
+    
+
 
     criarReceita: async (ubs_id, medi_id, paci_id, medicamento_nome, dosagem, frequencia_dosagem, tempo_uso, observacao_medica, data_emissao, data_validade) => {
         return new Promise((aceito, recusado) => {

@@ -37,30 +37,31 @@ module.exports = {
     },
     
 
-alterarDadosPaciente: async (req, res) => {
-    let json = { error: '', result: {} };
-
-    try {
-        const { paci_id } = req.params;
-        const dadosPaciente = req.body;
-
-        if (!paci_id) {
-            json.error = 'ID do paciente não fornecido';
-            res.status(400).json(json);
-            return;
+    alterarDadosPaciente: async (req, res) => {
+        let json = { error: '', result: {} };
+    
+        try {
+            const { paci_id } = req.params;
+            const dadosPaciente = req.body;
+    
+            if (!paci_id) {
+                json.error = 'ID do paciente não fornecido';
+                res.status(400).json(json);
+                return;
+            }
+    
+            // Chama a função do modelo para alterar os dados do paciente
+            await PacienteModel.alterarDadosPaciente(paci_id, dadosPaciente);
+    
+            json.result = 'Dados do paciente alterados com sucesso';
+            res.json(json);
+        } catch (error) {
+            console.error('Erro ao processar solicitação de alteração de dados do paciente:', error);
+            json.error = 'Erro ao processar solicitação de alteração de dados do paciente';
+            res.status(500).json(json);
         }
-
-        // Chama a função do modelo para alterar os dados do paciente
-        await PacienteModel.alterarDadosPaciente(paci_id, dadosPaciente);
-
-        json.result = 'Dados do paciente alterados com sucesso';
-        res.json(json);
-    } catch (error) {
-        console.error('Erro ao processar solicitação de alteração de dados do paciente:', error);
-        json.error = 'Erro ao processar solicitação de alteração de dados do paciente';
-        res.status(500).json(json);
-    }
-},
+    },
+    
 
 TodasConsultasDeUmPaci: async (req, res) => {
     let json = { error: '', result: {} };
@@ -129,7 +130,7 @@ listarExamesPorPaciente: async (req, res) => {
 
         if (dadosPacienteExames.length > 0) {
             json.result = dadosPacienteExames; // Retorna os dados do paciente, exames e UBS
-        } else {
+        } else {9
             json.error = 'Nenhum exame encontrado para esse paciente.';
         }
 
@@ -140,25 +141,34 @@ listarExamesPorPaciente: async (req, res) => {
     }
 },
 
-listarReceitasPorPaciente: async (req, res) => {
-    let json = { error: '', result: {} };
+ReceitasPorPaciente: async (req, res) => {
+    let json = { error: '', result: [] };
 
     try {
-        const paci_id = req.params.paci_id; // Obtém o paci_id da URL
-        const dadosPacienteReceita = await PacienteModel.buscarReceitasPorPaciente(paci_id);
+        const { paci_id } = req.params;
 
-        if (dadosPacienteReceita.length > 0) {
-            json.result = dadosPacienteReceita; // Retorna os dados do paciente, exames e UBS
+        if (!paci_id) {
+            json.error = 'ID do paciente não fornecido.';
+            res.status(400).json(json);
+            return;
+        }
+
+        const receitas = await PacienteModel.buscarReceitasPorPaciente(paci_id);
+
+        if (receitas.length > 0) {
+            json.result = receitas;
         } else {
-            json.error = 'Nenhum exame encontrado para esse paciente.';
+            json.error = 'Nenhuma receita encontrada para o paciente.';
         }
 
         res.json(json);
+
     } catch (error) {
-        json.error = 'Erro ao buscar os exames, dados do paciente e UBS.';
+        json.error = 'Erro ao buscar receitas.';
         res.status(500).json(json);
     }
 },
+
 
 listarVacinasPorPaciente: async (req, res) => {
     let json = { error: '', result: {} };
@@ -178,7 +188,35 @@ listarVacinasPorPaciente: async (req, res) => {
         json.error = 'Erro ao buscar os exames, dados do paciente e UBS.';
         res.status(500).json(json);
     }
-}
+},
 
+buscarPacientePorNome: async (req, res) => {
+    let json = { error: '', result: {} };
+
+    try {
+        const { paci_nome } = req.params; // Pega o nome do paciente dos parâmetros da URL
+
+        if (!paci_nome) {
+            json.error = 'Nome do paciente não fornecido.';
+            res.status(400).json(json);
+            return;
+        }
+
+        const paci_id = await PacienteModel.buscarPacienteIdPorNome(paci_nome);
+
+        if (!paci_id) {
+            json.error = 'Paciente não encontrado.';
+            res.status(404).json(json);
+            return;
+        }
+
+        json.result = { paci_id };
+        res.json(json);
+
+    } catch (error) {
+        json.error = 'Erro ao buscar o paciente.';
+        res.status(500).json(json);
+    }
+},
   
 }

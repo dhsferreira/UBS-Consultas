@@ -2,20 +2,65 @@ const db = require('../db');
 const { createClient } = require('@supabase/supabase-js');
 
 // Configuração do Supabase
-const supabaseUrl = 'https://gtlntaigxnnlsalocafi.supabase.co'; // URL do projeto Supabase
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0bG50YWlneG5ubHNhbG9jYWZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjA0NzM5NDMsImV4cCI6MjAzNjA0OTk0M30.GFUMf21m2yYm3lwrdisu-6Mt7AC3fqiRKRCckBpionA'; // Chave API do Supabase
+const supabaseUrl = 'https://mvxazgyzgiuivzngdbov.supabase.co'; // Substitua pela URL do seu projeto
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12eGF6Z3l6Z2l1aXZ6bmdkYm92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjc5ODcyMjMsImV4cCI6MjA0MzU2MzIyM30.Qg05UnatADTemLtofxUeI-b7CQqt3gb8bVNmuO7q5n0'; // Substitua pela sua chave de API
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 module.exports = {
+
+    alterarDadosRecepcionista: (recep_id, dados) => {
+        return new Promise((aceito, recusado) => {
+            const fieldsToUpdate = [];
+            const valuesToUpdate = [];
+    
+            Object.keys(dados).forEach(key => {
+                if (dados[key] !== undefined) {
+                    fieldsToUpdate.push(`${key} = ?`);
+                    valuesToUpdate.push(dados[key]);
+                }
+            });
+    
+            valuesToUpdate.push(recep_id);
+    
+            // Atualizando no MySQL
+            db.query(
+                `UPDATE recepcionista SET ${fieldsToUpdate.join(', ')} WHERE recep_id = ?`,
+                valuesToUpdate,
+                async (error, results) => {
+                    if (error) {
+                        console.error('Erro ao executar consulta de alteração de dados da recepcionista no MySQL:', error);
+                        recusado(error);
+                        return;
+                    }
+    
+                    console.log('Dados da recepcionista alterados no MySQL com sucesso:', results);
+    
+                    // Atualizando também no Supabase
+                    const { data, error: supabaseError } = await supabase
+                        .from('recepcionista')
+                        .update(dados)
+                        .eq('recep_id', recep_id);
+    
+                    if (supabaseError) {
+                        console.error('Erro ao atualizar dados da recepcionista no Supabase:', supabaseError);
+                        recusado(supabaseError);
+                        return;
+                    }
+    
+                    console.log('Dados da recepcionista alterados no Supabase com sucesso:', data);
+                    aceito(results);
+                }
+            );
+        });
+    },
+    
+
     TodasConsultasDeUmaUbs: (ubs_id, data) => {
         return new Promise((aceito, recusado) => {
             let query = `
                 SELECT 
                     paciente.paci_nome, 
-                    CONCAT(SUBSTRING(paciente.paci_cpf, 1, 3), '.', 
-                           SUBSTRING(paciente.paci_cpf, 4, 3), '.', 
-                           SUBSTRING(paciente.paci_cpf, 7, 3), '-', 
-                           SUBSTRING(paciente.paci_cpf, 10, 2)) AS paci_cpf,
+                    paciente.paci_cpf, 
                     ubs.ubs_nome, 
                     areas_medicas.area_nome, 
                     DATE_FORMAT(datas_horarios.horarios_dia, '%d/%m/%Y') AS horarios_dia, 
@@ -43,7 +88,7 @@ module.exports = {
     
                 const consultas = results.map(consulta => ({
                     paci_nome: consulta.paci_nome,
-                    paci_cpf: consulta.paci_cpf, // CPF formatado
+                    paci_cpf: consulta.paci_cpf,
                     ubs_nome: consulta.ubs_nome,
                     area_nome: consulta.area_nome,
                     horarios_dia: consulta.horarios_dia, // Data já formatada
@@ -55,7 +100,6 @@ module.exports = {
             });
         });
     },
-    
     TodasConsultasDeUmaUbsPorDia: (ubs_id, horarios_dia) => {
         return new Promise((aceito, recusado) => {
             let query = `

@@ -64,12 +64,14 @@ router.post('/Paciente', PacientesController.inserir);//#
 router.put('/paciente/:paci_id', PacientesController.alterarDadosPaciente);//#
 router.get('/Consulta/:paci_id', PacientesController.TodasConsultasDeUmPaci);//#*
 router.post('/consultas/criar', PacientesController.criarConsulta);//#*
-router.get('/paciente/:paci_id/exames', PacientesController.listarExamesPorPaciente);//#*
-router.get('/paciente/:paci_id/receitas', PacientesController.listarReceitasPorPaciente);//#*
+router.get('/paciente/:paci_id/exames', PacientesController.listarExamesPorPaciente);//#
+router.get('/paciente/:paci_id/receitas', PacientesController.ReceitasPorPaciente);//#
 router.get('/paciente/:paci_id/vacinas', PacientesController.listarVacinasPorPaciente);//#
+router.get('/BuscarNome/:paci_nome', PacientesController.buscarPacientePorNome);
 
 //----------------------------RECEPCIONISTA-----------------------------------//
-router.get('/Consulta/ubs/:ubs_id', RecepcionistaController.TodasConsultasDeUmaUbs);//#*
+router.put('/recepcionista/:recep_id', RecepcionistaController.alterarDadosRecepcionista);//#
+router.get('/Consulta/ubs/:ubs_id', RecepcionistaController.TodasConsultasDeUmaUbs);//#
 router.get('/consultas/ubs/:ubs_id/horario_dia/:horarios_dia', RecepcionistaController.TodasConsultasDeUmaUbsPorDia);
 router.get('/consultas/ubs/:ubs_id/area/:area_nome', RecepcionistaController.TodasConsultasDeUbsArea);
 router.get('/consultas/ubs/:ubs_id/area/:area_nome/dia/:dia', RecepcionistaController.TodasConsultasDeUbsAreaDia);
@@ -78,6 +80,7 @@ router.post('/adicionarHorarioAreaMedica', RecepcionistaController.adicionarHora
 router.get('/buscarHorariosNaoVinculados/:horarios_dia', RecepcionistaController.buscarHorariosNaoVinculados);
 
 //----------------------------MEDICO-----------------------------------//
+router.put('/medico/:medi_id', MedicoController.alterarDadosMedico);//#
 router.post('/criarReceita', MedicoController.criarReceita);
 router.post('/criarExame', MedicoController.criarExame);
 module.exports = router;

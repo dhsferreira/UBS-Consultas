@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, TextInput, Button, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, FlatList, SafeAreaView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
 import { useUser } from '../UserContext';
 import supabase from '../Supabase';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+
+
 interface Area {
   area_id: number;
   area_nome: string;
@@ -30,6 +33,8 @@ export default function App() {
   const { user } = useUser();
   const [ubsPrecedencia, setUbsPrecedencia] = useState<string | null>(null);
   const [ubsNome, setUbsNome] = useState<string | null>(null);
+
+  const navigation = useNavigation();
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -172,111 +177,116 @@ export default function App() {
   }, [selectedData]);
 
   return (
-    <ScrollView style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar style="auto" />
-      <View style={styles.header}>
-        <Text style={styles.headerText}>UBS</Text>
-        <Text style={styles.subHeaderText}>Unidade Básica de Saúde</Text>
-      </View>
-      <Text style={styles.title}>Agendar</Text>
-      <View style={styles.steps}>
-        <Ionicons name="desktop-outline" size={24} color="black" />
-        <Ionicons name="create-outline" size={24} color="black" />
-        <Ionicons name="checkmark-circle-outline" size={24} color="black" />
-      </View>
-      
-      <Text style={styles.subtitle}>UBS: {ubsNome || 'Carregando...'}</Text>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back-outline" size={24} color="#0000ff" />
+        </TouchableOpacity>
+        <View style={styles.header}>
+          <Text style={styles.headerText}>UBS</Text>
+          <Text style={styles.subHeaderText}>Unidade Básica de Saúde</Text>
+        </View>
+        <Text style={styles.title}>Agendar</Text>
+        <View style={styles.steps}>
+          <Ionicons name="desktop-outline" size={24} color="black" />
+          <Ionicons name="create-outline" size={24} color="black" />
+          <Ionicons name="checkmark-circle-outline" size={24} color="black" />
+        </View>
+        
+        <Text style={styles.subtitle}>UBS: {ubsNome || 'Carregando...'}</Text>
 
-      <Text style={styles.subtitle}>Escolha o atendimento:</Text>
-      <Picker
-        selectedValue={selectedAtendimento}
-        onValueChange={(itemValue) => setSelectedAtendimento(itemValue)}
-        enabled={ubsPrecedencia !== null}
-      >
-        <Picker.Item label="Selecione uma área" value="" />
-        {areasList.map((area) => (
-          <Picker.Item key={area.area_id} label={area.area_nome} value={area.area_nome} />
-        ))}
-      </Picker>
+        <Text style={styles.subtitle}>Escolha o atendimento:</Text>
+        <Picker
+          selectedValue={selectedAtendimento}
+          onValueChange={(itemValue) => setSelectedAtendimento(itemValue)}
+          enabled={ubsPrecedencia !== null}
+        >
+          <Picker.Item label="Selecione uma área" value="" />
+          {areasList.map((area) => (
+            <Picker.Item key={area.area_id} label={area.area_nome} value={area.area_nome} />
+          ))}
+        </Picker>
 
-      <Text style={styles.subtitle}>Escolha o dia:</Text>
-      <Picker
-        selectedValue={selectedData} 
-        onValueChange={(itemValue) => setSelectedData(itemValue)}
-        enabled={selectedAtendimento !== ''}
-      >
-        <Picker.Item label="Selecione uma data" value="" />
-        {diasList.map((dia) => (
-          <Picker.Item key={dia.horarios_dia} label={dia.horarios_dia} value={dia.horarios_dia} />
-        ))}
-      </Picker>
+        <Text style={styles.subtitle}>Escolha o dia:</Text>
+        <Picker
+          selectedValue={selectedData} 
+          onValueChange={(itemValue) => setSelectedData(itemValue)}
+          enabled={selectedAtendimento !== ''}
+        >
+          <Picker.Item label="Selecione uma data" value="" />
+          {diasList.map((dia) => (
+            <Picker.Item key={dia.horarios_dia} label={dia.horarios_dia} value={dia.horarios_dia} />
+          ))}
+        </Picker>
 
-      <Text style={styles.subtitle}>Horários Disponíveis:</Text>
-      <FlatList
-        data={horariosList}
-        keyExtractor={(item) => item.horarios_horarios}
-        renderItem={({ item }) => (
-          <View style={styles.horarioItem}>
-            <Text style={styles.horarioText}>- {item.horarios_horarios}</Text>
-          </View>
-        )}
-      />
+        <Text style={styles.subtitle}>Horários Disponíveis:</Text>
+        <FlatList
+          data={horariosList}
+          keyExtractor={(item) => item.horarios_horarios}
+          renderItem={({ item }) => (
+            <View style={styles.horarioItem}>
+              <Text style={styles.horarioText}>- {item.horarios_horarios}</Text>
+            </View>
+          )}
+        />
 
-   
-      <Picker
-        selectedValue={selectedHorario}
-        onValueChange={(itemValue) => setSelectedHorario(itemValue)}
-        enabled={selectedData !== ''}
-      >
-        <Picker.Item label="Adicionar um horário" value="" />
-        {horariosNaoVinculados.map((horario) => (
-          <Picker.Item key={horario.horarios_horarios} label={horario.horarios_horarios} value={horario.horarios_horarios} />
-        ))}
-      </Picker>
+        <Picker
+          selectedValue={selectedHorario}
+          onValueChange={(itemValue) => setSelectedHorario(itemValue)}
+          enabled={selectedData !== ''}
+        >
+          <Picker.Item label="Adicionar um horário" value="" />
+          {horariosNaoVinculados.map((horario) => (
+            <Picker.Item key={horario.horarios_horarios} label={horario.horarios_horarios} value={horario.horarios_horarios} />
+          ))}
+        </Picker>
 
-      <TouchableOpacity
-  style={styles.button}
-  onPress={async () => {
-    if (selectedHorario && selectedAtendimento && selectedData) {
-      try {
-        const response = await fetch('http://10.47.4.51:3000/api/adicionarHorarioAreaMedica', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            area_nome: selectedAtendimento,
-            horarios_dia: selectedData,
-            horarios_horarios: selectedHorario,
-          }),
-        });
+        <TouchableOpacity
+          style={styles.button}
+          onPress={async () => {
+            if (selectedHorario && selectedAtendimento && selectedData) {
+              try {
+                const response = await fetch('http://10.47.4.51:3000/api/agendar', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    ubs_id: ubsPrecedencia,
+                    atendimento: selectedAtendimento,
+                    horario: selectedHorario,
+                    data: selectedData,
+                  }),
+                });
 
-        const data = await response.json();
-
-        if (data.error === '') {
-          Alert.alert("Sucesso", "Consulta agendada com sucesso!");
-        } else {
-          Alert.alert("Erro", data.error);
-        }
-      } catch (error) {
-        console.error('Erro ao agendar consulta:', error);
-        Alert.alert("Erro", "Não foi possível agendar a consulta.");
-      }
-    } else {
-      Alert.alert("Selecione um horário, área e data.");
-    }
-  }}
->
-  <Text style={styles.buttonText}>Agendar Consulta</Text>
-</TouchableOpacity>
-
-    </ScrollView>
+                const data = await response.json();
+                if (data.error === '') {
+                  Alert.alert('Sucesso', 'Agendamento realizado com sucesso!');
+                } else {
+                  Alert.alert('Erro', data.error);
+                }
+              } catch (error) {
+                Alert.alert('Erro', 'Erro ao realizar o agendamento. Tente novamente mais tarde.');
+              }
+            } else {
+              Alert.alert('Erro', 'Por favor, selecione todos os campos.');
+            }
+          }}
+        >
+          <Text style={styles.buttonText}>Agendar</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  scrollContainer: {
     padding: 20,
   },
   header: {
@@ -286,40 +296,45 @@ const styles = StyleSheet.create({
   headerText: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: '#0000ff'
   },
   subHeaderText: {
-    fontSize: 18,
-    color: 'gray',
+    fontSize: 16,
+    color: '#000',
   },
   title: {
-    fontSize: 20,
-    marginBottom: 10,
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginVertical: 20,
   },
   steps: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 20,
-  },
-  subtitle: {
-    fontSize: 16,
+    justifyContent: 'space-between',
     marginVertical: 10,
   },
-  button: {
-    backgroundColor: '#007BFF',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
+  subtitle: {
+    fontSize: 18,
+    marginVertical: 10,
   },
   horarioItem: {
     padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    backgroundColor: '#fff',
+    borderRadius: 5,
+    marginVertical: 5,
   },
   horarioText: {
+    fontSize: 16,
+  },
+  button: {
+    backgroundColor: '#007BFF',
+    borderRadius: 5,
+    padding: 15,
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
     fontSize: 16,
   },
 });

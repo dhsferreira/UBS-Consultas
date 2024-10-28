@@ -154,10 +154,29 @@ const Consultas = () => {
     }
   };
 
-  const handleExames = (consulta: Consulta) => {
-    // Navegar para a tela de exames passando os dados da consulta
-    navigation.navigate('Exames', { consulta });
+  const handleExames = async (consulta: Consulta) => {
+    try {
+      // Realiza a requisição para buscar o paci_id pelo nome do paciente
+      const response = await axios.get(`http://192.168.137.1:3000/api/BuscarNome/${consulta.paci_nome}`);
+      
+      // Log da resposta completa para verificar a estrutura
+      console.log('Resposta da API:', response.data);
+      
+      // Verifica se a resposta contém o paci_id dentro de result
+      if (response.data && response.data.result && response.data.result.paci_id) {
+        const paciId = response.data.result.paci_id;
+  
+        // Navega para a tela de exames passando o paci_id e os dados da consulta
+        navigation.navigate('Exames', { consulta, paciId });
+      } else {
+        console.error('Erro: paci_id não encontrado na resposta.');
+      }
+    } catch (error) {
+      console.error('Erro ao buscar paci_id:', error);
+    }
   };
+  
+  
 
   const handleReceitas = (consulta: Consulta) => {
     // Lógica para navegar ou buscar receitas relacionadas à consulta
@@ -260,12 +279,10 @@ const Consultas = () => {
             {/* Botões de ação */}
             <View style={styles.buttonContainer}>
               <TouchableOpacity style={styles.button} onPress={() => handleExames(consulta)}>
-                <Text style={styles.buttonText}>Exames</Text>
+                <Text style={styles.buttonText}>Ver Perfil de Paciente</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.button} onPress={() => handleReceitas(consulta)}>
-                <Text style={styles.buttonText}>Receitas</Text>
-              </TouchableOpacity>
+             
             </View>
           </View>
         ))}

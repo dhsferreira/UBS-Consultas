@@ -1,6 +1,33 @@
 const RecepcionistaModel = require('../services/RecepcionistaModel');
 
 module.exports = {
+
+    alterarDadosRecepcionista: async (req, res) => {
+        let json = { error: '', result: {} };
+    
+        try {
+            const { recep_id } = req.params;
+            const dadosRecepcionista = req.body;
+    
+            if (!recep_id) {
+                json.error = 'ID da recepcionista não fornecido';
+                res.status(400).json(json);
+                return;
+            }
+    
+            // Chama a função do modelo para alterar os dados da recepcionista
+            await RecepcionistaModel.alterarDadosRecepcionista(recep_id, dadosRecepcionista);
+    
+            json.result = 'Dados da recepcionista alterados com sucesso';
+            res.json(json);
+        } catch (error) {
+            console.error('Erro ao processar solicitação de alteração de dados da recepcionista:', error);
+            json.error = 'Erro ao processar solicitação de alteração de dados da recepcionista';
+            res.status(500).json(json);
+        }
+    },
+    
+
     TodasConsultasDeUmaUbs: async (req, res) => {
         let json = { error: '', result: {} };
     

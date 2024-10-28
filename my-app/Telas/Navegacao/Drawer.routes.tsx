@@ -179,7 +179,7 @@ export default function DrawerRoutes() {
               drawerIcon: ({ color, size }) => (
                 <Ionicons name="document-text" size={size} color={color} />
               ),
-              swipeEnabled: false,
+              
             }}
           />
         </>
