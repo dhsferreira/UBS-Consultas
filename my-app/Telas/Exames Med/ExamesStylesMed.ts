@@ -324,5 +324,18 @@ infoText: {
   fontSize: 16,
   color: '#757575', // Cinza escuro para o texto
 },
+createRecipeButton: {
+  width: '50%',
+  backgroundColor: '#4a90e2', // Botão azul moderno
+  paddingVertical: 12,
+  borderRadius: 6,
+  marginBottom: 25,
+  alignSelf: 'center', // Centraliza o botão horizontalmente
+},
+createRecipeButtonText: {
+  fontSize: 16,
+  color: '#fff',
+  alignSelf: 'center',
+}
 
 });

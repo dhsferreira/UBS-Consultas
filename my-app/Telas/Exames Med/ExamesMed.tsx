@@ -4,9 +4,11 @@ import axios from 'axios';
 import { TextInputMask } from 'react-native-masked-text';
 import { styles } from '../Exames Med/ExamesStylesMed'; 
 import { supabase } from '../Supabase'; 
+import { useNavigation, DrawerActions, useFocusEffect } from '@react-navigation/native';
 
 const ExamesScreen = ({ route }) => {
-  const { paciId } = route.params; 
+  const { paciId } = route.params;
+  const navigation = useNavigation();
   const [consultas, setConsultas] = useState([]);
   const [filteredConsultas, setFilteredConsultas] = useState([]);
   const [exames, setExames] = useState([]);
@@ -25,7 +27,7 @@ const ExamesScreen = ({ route }) => {
 
   const fetchConsultas = async () => {
     try {
-      const response = await axios.get(`http://192.168.0.101:3000/api/Consulta/${paciId}`);
+      const response = await axios.get(`http://10.47.2.96:3000/api/Consulta/${paciId}`);
       setConsultas(response.data.result || []);
       setFilteredConsultas(response.data.result || []);
     } catch (error) {
@@ -35,7 +37,7 @@ const ExamesScreen = ({ route }) => {
 
   const fetchExames = async () => {
     try {
-      const response = await axios.get(`http://192.168.0.101:3000/api/paciente/${paciId}/exames`);
+      const response = await axios.get(`http://10.47.2.96:3000/api/paciente/${paciId}/exames`);
       setExames(response.data.result || []);
       setFilteredExames(response.data.result || []);
     } catch (error) {
@@ -45,7 +47,7 @@ const ExamesScreen = ({ route }) => {
 
   const fetchReceitas = async () => {
     try {
-      const response = await axios.get(`http://192.168.0.101:3000/api/paciente/${paciId}/receitas`);
+      const response = await axios.get(`http://10.47.2.96:3000/api/paciente/${paciId}/receitas`);
       setReceitas(response.data.result || []);
       setFilteredReceitas(response.data.result || []);
     } catch (error) {
@@ -223,7 +225,14 @@ const ExamesScreen = ({ route }) => {
       ) : (
         <Text>Nenhuma receita encontrada</Text>
       )}
+       <TouchableOpacity
+        style={styles.createRecipeButton}
+        onPress={() => navigation.navigate('Criar', { paciId })}
+      >
+        <Text style={styles.createRecipeButtonText}>Criar Receita</Text>
+      </TouchableOpacity>
     </ScrollView>
+    
   );
   
   return (
