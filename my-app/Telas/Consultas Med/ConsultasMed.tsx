@@ -167,7 +167,7 @@ const Consultas = () => {
         const paciId = response.data.result.paci_id;
   
         // Navega para a tela de exames passando o paci_id e os dados da consulta
-        navigation.navigate('Exames', { consulta, paciId });
+        navigation.navigate('ExamesMed', { consulta, paciId });
       } else {
         console.error('Erro: paci_id não encontrado na resposta.');
       }

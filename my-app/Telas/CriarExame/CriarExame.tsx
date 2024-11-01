@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Image, Text, TouchableOpacity, TextInput, Button, Alert } from 'react-native';
+import { View, Image, Text, TouchableOpacity, TextInput, Button, Alert, ScrollView } from 'react-native';
 import { useNavigation, DrawerActions } from '@react-navigation/native';
 import axios from 'axios';
 import { supabase } from '../Supabase'; // Importa seu Supabase existente
@@ -29,7 +29,7 @@ const Consultas = ({ route }) => {
   useEffect(() => {
     const fetchPaciNome = async () => {
       try {
-        const response = await axios.get(`http://10.47.2.96:3000/api/Nome/${paciId}`);
+        const response = await axios.get(`http://192.168.1.2:3000/api/Nome/${paciId}`);
         setPaciNome(response.data.paci_nome);
       } catch (error) {
         console.error('Erro ao buscar o nome do paciente:', error);
@@ -51,11 +51,10 @@ const Consultas = ({ route }) => {
       }
 
       if (user) {
-        // Busca o medi_id, ubs_id e medi_nome na tabela medico
         const { data: medicoData, error: fetchError } = await supabase
           .from('medico')
           .select('medi_id, ubs_id, medi_nome')
-          .eq('medi_email', user.email) // Assume que o email é a chave para encontrar o médico
+          .eq('medi_email', user.email)
           .single();
 
         if (fetchError) {
@@ -63,11 +62,10 @@ const Consultas = ({ route }) => {
           return;
         }
 
-        setMediId(medicoData.medi_id); // Armazena o medi_id no estado
-        setUbsId(medicoData.ubs_id); // Armazena o ubs_id no estado
-        setMediNome(medicoData.medi_nome); // Armazena o nome do médico
+        setMediId(medicoData.medi_id);
+        setUbsId(medicoData.ubs_id);
+        setMediNome(medicoData.medi_nome);
 
-        // Após obter o ubs_id, busca o nome da UBS
         fetchUbsNome(medicoData.ubs_id);
       }
     };
@@ -75,28 +73,23 @@ const Consultas = ({ route }) => {
     fetchMediIdEubsId();
   }, []);
 
-  // useEffect para buscar o nome da UBS
   const fetchUbsNome = async (ubsId) => {
     try {
-      const response = await axios.get(`http://10.47.2.96:3000/api/Ubs/${ubsId}/nome`);
-      console.log('Resposta da API de UBS:', response.data); // Adiciona log da resposta
+      const response = await axios.get(`http://192.168.1.2:3000/api/Ubs/${ubsId}/nome`);
+      console.log('Resposta da API de UBS:', response.data);
       setUbsNome(response.data.result.ubs_nome);
-      // Armazena o nome da UBS
     } catch (error) {
       console.error('Erro ao buscar o nome da UBS:', error);
     }
   };
   
-  // useEffect para monitorar ubsNome após a atualização
   useEffect(() => {
     console.log('Nome da UBS atualizado:', ubsNome);
   }, [ubsNome]);
-  
 
-  // Função para enviar o POST
   const adicionarReceita = async () => {
     try {
-      const response = await axios.post('http://10.47.2.96:3000/api/criarReceita', {
+      const response = await axios.post('http://192.168.1.2:3000/api/criarReceita', {
         ubs_id: ubsId,
         medi_id: mediId,
         paci_id: paciId,
@@ -109,49 +102,55 @@ const Consultas = ({ route }) => {
         data_validade: dataValidade,
       });
       Alert.alert('Sucesso', `Receita adicionada com ID: ${response.data.result.receita_id}`);
+      // Navegação após sucesso na criação da receita
+      navigation.navigate('ExamesMed', { paciId });
     } catch (error) {
       console.log(error);
       Alert.alert('Erro', 'Não foi possível adicionar a receita. Verifique os dados e tente novamente.');
     }
   };
 
-  // Função para cancelar a operação e navegar para a tela "Exame"
   const cancelarReceita = () => {
-    navigation.navigate('Exames', { paciId });
+    navigation.navigate('ExamesMed', { paciId });
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.leftButton} onPress={openDrawer}>
-          <Image source={require('../assets/3 linhas.png')} style={styles.buttonImage} />
-        </TouchableOpacity>
-        <Image source={require('../assets/ubsLogo.png')} style={styles.centerImage} />
-      </View>
+     <View style={styles.header}>
+  <TouchableOpacity style={styles.leftButton} onPress={openDrawer}>
+    <Image source={require('../assets/3 linhas.png')} style={styles.buttonImage} />
+  </TouchableOpacity>
+  
+  {/* Logo transformada em botão */}
+  <TouchableOpacity onPress={() => navigation.navigate('Noticias')}>
+    <Image source={require('../assets/ubsLogo.png')} style={styles.centerImage} />
+  </TouchableOpacity>
+</View>
+
 
       <View style={styles.secondHeader}>
         <Text style={styles.smallText}>Você está em Home / Adicionar Receita</Text>
         <Text style={styles.largeText}>Adicionar Receita</Text>
       </View>
 
-      <View style={styles.form}>
+      <ScrollView contentContainerStyle={styles.form}>
         <TextInput
           style={styles.input}
-          placeholder={`${ubsNome}`} // Coloca o nome da UBS no placeholder
-          value={ubsId} // Continua mostrando o ubsId no value
-          editable={false} // Defina como não editável
+          placeholder={`${ubsNome}`}
+          value={ubsId}
+          editable={false}
         />
         <TextInput
           style={styles.input}
-          placeholder={`${mediNome}`} // Mostra o nome do médico no placeholder
-          value={mediId} // Exibe o medi_id no value
-          editable={false} // Defina como não editável
+          placeholder={`${mediNome}`}
+          value={mediId}
+          editable={false}
         />
         <TextInput
           style={styles.input}
-          placeholder={`${paciNome}`} // Coloca o nome do paciente no placeholder
+          placeholder={`${paciNome}`}
           value={paciId}
-          editable={false} // Defina como não editável
+          editable={false}
         />
         <TextInput
           style={styles.input}
@@ -202,7 +201,7 @@ const Consultas = ({ route }) => {
             <Text style={styles.cancelButtonText}>Cancelar</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 };

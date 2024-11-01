@@ -29,7 +29,7 @@ export const styles = StyleSheet.create({
     height: 50,
     marginTop: 30,
     left: '50%',
-    marginLeft: -50,
+    marginLeft: -200,
     marginRight: 120,
     marginBottom: 10,
   },

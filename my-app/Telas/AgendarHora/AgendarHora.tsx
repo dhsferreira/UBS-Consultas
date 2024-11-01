@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, FlatList, SafeAreaView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { StatusBar } from 'expo-status-bar';
@@ -6,8 +6,6 @@ import { useUser } from '../UserContext';
 import supabase from '../Supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-
-
 interface Area {
   area_id: number;
   area_nome: string;
@@ -26,13 +24,13 @@ export default function App() {
   const [selectedAtendimento, setSelectedAtendimento] = useState('');
   const [selectedData, setSelectedData] = useState('');
   const [selectedHorario, setSelectedHorario] = useState('');
-  const [areasList, setAreasList] = useState<Area[]>([]);
-  const [diasList, setDiasList] = useState<Dia[]>([]);
-  const [horariosList, setHorariosList] = useState<Horario[]>([]);
-  const [horariosNaoVinculados, setHorariosNaoVinculados] = useState<Horario[]>([]);
+  const [areasList, setAreasList] = useState([]);
+  const [diasList, setDiasList] = useState([]);
+  const [horariosList, setHorariosList] = useState([]);
+  const [horariosNaoVinculados, setHorariosNaoVinculados] = useState([]);
   const { user } = useUser();
-  const [ubsPrecedencia, setUbsPrecedencia] = useState<string | null>(null);
-  const [ubsNome, setUbsNome] = useState<string | null>(null);
+  const [ubsPrecedencia, setUbsPrecedencia] = useState(null);
+  const [ubsNome, setUbsNome] = useState(null);
 
   const navigation = useNavigation();
 
@@ -67,7 +65,7 @@ export default function App() {
     if (ubsPrecedencia) {
       const fetchUbsNome = async () => {
         try {
-          const response = await fetch(`http://10.47.4.51:3000/api/Ubs/${ubsPrecedencia}/nome`);
+          const response = await fetch(`http://192.168.1.2:3000/api/Ubs/${ubsPrecedencia}/nome`);
           const data = await response.json();
           if (data.error === '') {
             setUbsNome(data.result.ubs_nome);
@@ -87,7 +85,7 @@ export default function App() {
     if (ubsPrecedencia !== '') {
       const fetchAreas = async () => {
         try {
-          const response = await fetch(`http://10.47.4.51:3000/api/areas/${ubsPrecedencia}`);
+          const response = await fetch(`http://192.168.1.2:3000/api/areas/${ubsPrecedencia}`);
           const data = await response.json();
           if (data.error === '') {
             setAreasList(data.result);
@@ -110,8 +108,10 @@ export default function App() {
     if (selectedAtendimento !== '' && ubsPrecedencia !== '') {
       const fetchDias = async () => {
         try {
-          const response = await fetch(`http://10.47.4.51:3000/api/ubs/${ubsPrecedencia}/areas/${selectedAtendimento}/horarios`);
+          const response = await fetch(`http://192.168.1.2:3000/api/buscarDiasNaoVinculados`);
           const data = await response.json();
+          console.log(data); // Adicione este console.log para verificar a estrutura do retorno
+          
           if (data.error === '') {
             setDiasList(data.result);
           } else {
@@ -121,6 +121,7 @@ export default function App() {
           console.error('Erro ao buscar os dias:', error);
         }
       };
+      
 
       fetchDias();
     } else {
@@ -129,19 +130,34 @@ export default function App() {
   }, [selectedAtendimento, ubsPrecedencia]);
 
   useEffect(() => {
+    console.log("selectedData:", selectedData);
+    console.log("selectedAtendimento:", selectedAtendimento);
+    console.log("ubsPrecedencia:", ubsPrecedencia);
+
     if (selectedData !== '' && selectedAtendimento !== '' && ubsPrecedencia !== '') {
       const fetchHorarios = async () => {
         try {
-          const response = await fetch(`http://10.47.4.51:3000/api/horario/horario/${ubsPrecedencia}/${selectedAtendimento}/${selectedData}`);
+          console.log("Fetching data for:", selectedData);
+          const response = await fetch(`http://192.168.1.2:3000/api/horario/${ubsPrecedencia}/${selectedAtendimento}/${selectedData}`);
+          
+          if (!response.ok) {
+            console.error(`Erro: Status da resposta ${response.status}`);
+            return;
+          }
+
           const data = await response.json();
-          if (data.error === '') {
+          console.log("Data received:", data);  // Exibir o conteúdo completo da resposta da API
+
+          if (data && data.result && !data.error) {
             const formattedHorarios = data.result.map((item: Horario) => ({
               ...item,
               horarios_horarios: item.horarios_horarios.slice(0, 5)  // Remove os segundos
             }));
             setHorariosList(formattedHorarios);
-          } else {
+          } else if (data && data.error) {
             console.error('Erro ao buscar os horários:', data.error);
+          } else {
+            console.error('Erro ao buscar os horários: Formato de resposta inesperado', data);
           }
         } catch (error) {
           console.error('Erro ao buscar os horários:', error);
@@ -152,23 +168,27 @@ export default function App() {
     } else {
       setHorariosList([]);
     }
-  }, [selectedData, selectedAtendimento, ubsPrecedencia]);
+}, [selectedData, selectedAtendimento, ubsPrecedencia]);
+
+
 
   useEffect(() => {
     if (selectedData !== '') {
       const fetchHorariosNaoVinculados = async () => {
         try {
-          const response = await fetch(`http://10.47.4.51:3000/api/buscarHorariosNaoVinculados/${selectedData}`);
-          const data = await response.json();
-          if (data.error === '') {
-            setHorariosNaoVinculados(data.result);
-          } else {
-            console.error('Erro ao buscar horários não vinculados:', data.error);
-          }
+            const response = await fetch(`http://192.168.1.2:3000/api/buscarHorariosNaoVinculados/${selectedData}`);
+            const data = await response.json();
+            if (data.error === '') {
+                const uniqueHorarios = Array.from(new Set(data.result.map(horario => horario.horarios_horarios)));
+                setHorariosNaoVinculados(uniqueHorarios.map(horario => ({ horarios_horarios: horario })));
+            } else {
+                console.error('Erro ao buscar horários não vinculados:', data.error);
+            }
         } catch (error) {
-          console.error('Erro ao buscar horários não vinculados:', error);
+            console.error('Erro ao buscar horários não vinculados:', error);
         }
-      };
+    };
+    
 
       fetchHorariosNaoVinculados();
     } else {
@@ -210,15 +230,16 @@ export default function App() {
 
         <Text style={styles.subtitle}>Escolha o dia:</Text>
         <Picker
-          selectedValue={selectedData} 
-          onValueChange={(itemValue) => setSelectedData(itemValue)}
-          enabled={selectedAtendimento !== ''}
-        >
-          <Picker.Item label="Selecione uma data" value="" />
-          {diasList.map((dia) => (
-            <Picker.Item key={dia.horarios_dia} label={dia.horarios_dia} value={dia.horarios_dia} />
-          ))}
-        </Picker>
+  selectedValue={selectedData} 
+  onValueChange={(itemValue) => setSelectedData(itemValue)}
+  enabled={selectedAtendimento !== ''}
+>
+  <Picker.Item label="Selecione uma data" value="" />
+  {diasList.map((dia, index) => ( // 'dia' agora é uma string
+    <Picker.Item key={index} label={dia} value={dia} /> // Utilize 'dia' diretamente
+  ))}
+</Picker>
+
 
         <Text style={styles.subtitle}>Horários Disponíveis:</Text>
         <FlatList
@@ -243,39 +264,64 @@ export default function App() {
         </Picker>
 
         <TouchableOpacity
-          style={styles.button}
-          onPress={async () => {
-            if (selectedHorario && selectedAtendimento && selectedData) {
-              try {
-                const response = await fetch('http://10.47.4.51:3000/api/agendar', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    ubs_id: ubsPrecedencia,
-                    atendimento: selectedAtendimento,
-                    horario: selectedHorario,
-                    data: selectedData,
-                  }),
-                });
+  style={styles.button}
+  onPress={async () => {
+    // Verifica se todos os campos obrigatórios foram preenchidos
+    if (selectedHorario && selectedAtendimento && selectedData) {
+      // Imprimindo os valores no console
+      console.log('Valores a serem enviados para a API:');
+      console.log('ubs_id:', ubsPrecedencia);
+      console.log('area_nome (atendimento):', selectedAtendimento); // area_nome
+      console.log('horarios_dia (data):', selectedData); // horarios_dia
+      console.log('horarios_horarios (horario):', selectedHorario); // horarios_horarios
 
-                const data = await response.json();
-                if (data.error === '') {
-                  Alert.alert('Sucesso', 'Agendamento realizado com sucesso!');
-                } else {
-                  Alert.alert('Erro', data.error);
-                }
-              } catch (error) {
-                Alert.alert('Erro', 'Erro ao realizar o agendamento. Tente novamente mais tarde.');
-              }
-            } else {
-              Alert.alert('Erro', 'Por favor, selecione todos os campos.');
-            }
-          }}
-        >
-          <Text style={styles.buttonText}>Agendar</Text>
-        </TouchableOpacity>
+      try {
+        const response = await fetch('http://192.168.1.2:3000/api/adicionarHorarioAreaMedica', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            area_nome: selectedAtendimento, // Ajustado
+            horarios_dia: selectedData, // Ajustado
+            horarios_horarios: selectedHorario, // Ajustado
+          }),
+        });
+
+        // Inspecionando a resposta
+        const textResponse = await response.text(); // Obtém a resposta como texto
+        console.log('Resposta da API:', textResponse); // Imprime a resposta
+
+        // Verifica se a resposta é válida
+        if (!response.ok) {
+          // Captura a resposta de erro, se houver
+          const errorData = JSON.parse(textResponse); // Tente converter a resposta em JSON
+          throw new Error(errorData.error || 'Erro na resposta da API');
+        }
+
+        const data = JSON.parse(textResponse); // Converte a resposta em JSON
+
+        // Verifica se houve erro no retorno da API
+        if (data.error && data.error !== '') {
+          Alert.alert('Erro', data.error);
+        } else {
+          Alert.alert('Sucesso', 'Agendamento realizado com sucesso!');
+          
+        }
+      } catch (error) {
+        // Exibe mensagem de erro detalhada
+        Alert.alert('Erro', error.message || 'Erro ao realizar o agendamento. Tente novamente mais tarde.');
+      }
+    } else {
+      Alert.alert('Erro', 'Por favor, selecione todos os campos.');
+    }
+  }}
+>
+  <Text style={styles.buttonText}>Agendar</Text>
+</TouchableOpacity>
+
+
+
       </ScrollView>
     </SafeAreaView>
   );

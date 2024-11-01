@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Image } from 'react-native';
+import { View, StyleSheet, Image, ScrollView } from 'react-native';
 import { TextInput, Button, RadioButton, Text, Snackbar } from 'react-native-paper';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../Cadastro/types/User.type';
@@ -99,65 +99,70 @@ const SignInScreen = ({ navigation }: SignInScreenProps) => {
     };
 
     return (
-        <View style={styles.container}>
-            <Image
-                source={require('../assets/ubsLogo.png')}
-                style={styles.logo}
-            />
-            <View style={styles.radioGroup}>
-                <RadioButton.Group onValueChange={value => setRadioValue(value)} value={radioValue}>
-                    <View style={styles.radioButtonContainer}>
-                        <RadioButton.Android value="Paciente" />
-                        <Text style={styles.radioButtonText}>Paciente</Text>
-                    </View>
-                    <View style={styles.radioButtonContainer}>
-                        <RadioButton.Android value="Recepcionista" />
-                        <Text style={styles.radioButtonText}>Recepcionista</Text>
-                    </View>
-                    <View style={styles.radioButtonContainer}>
-                        <RadioButton.Android value="Medico" />
-                        <Text style={styles.radioButtonText}>Médico</Text>
-                    </View>
-                </RadioButton.Group>
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <View style={styles.container}>
+                <Image
+                    source={require('../assets/ubsLogo.png')}
+                    style={styles.logo}
+                />
+                <View style={styles.radioGroup}>
+                    <RadioButton.Group onValueChange={value => setRadioValue(value)} value={radioValue}>
+                        <View style={styles.radioButtonContainer}>
+                            <RadioButton.Android value="Paciente" />
+                            <Text style={styles.radioButtonText}>Paciente</Text>
+                        </View>
+                        <View style={styles.radioButtonContainer}>
+                            <RadioButton.Android value="Recepcionista" />
+                            <Text style={styles.radioButtonText}>Recepcionista</Text>
+                        </View>
+                        <View style={styles.radioButtonContainer}>
+                            <RadioButton.Android value="Medico" />
+                            <Text style={styles.radioButtonText}>Médico</Text>
+                        </View>
+                    </RadioButton.Group>
+                </View>
+                <TextInput
+                    label="E-mail"
+                    mode="outlined"
+                    style={styles.input}
+                    keyboardType="email-address"
+                    value={email}
+                    onChangeText={setEmail}
+                />
+                <TextInput
+                    label="Senha"
+                    mode="outlined"
+                    secureTextEntry={!passwordVisible}
+                    style={styles.input}
+                    value={password}
+                    onChangeText={setPassword}
+                    right={<TextInput.Icon icon={passwordVisible ? "eye-off" : "eye"} onPress={() => setPasswordVisible(!passwordVisible)} />}
+                />
+                <Button style={styles.textButton}>
+                    Esqueceu sua senha?
+                </Button>
+                <Button style={styles.textButton} onPress={() => navigation.navigate('Cadastro')}>
+                    Não tem uma conta? Cadastrar-se
+                </Button>
+                <Button mode="contained" style={styles.button} onPress={handleSignIn}>
+                    Entrar
+                </Button>
+                <Snackbar
+                    visible={snackbarVisible}
+                    onDismiss={() => setSnackbarVisible(false)}
+                    duration={3000}
+                >
+                    {snackbarMessage}
+                </Snackbar>
             </View>
-            <TextInput
-                label="E-mail"
-                mode="outlined"
-                style={styles.input}
-                keyboardType="email-address"
-                value={email}
-                onChangeText={setEmail}
-            />
-            <TextInput
-                label="Senha"
-                mode="outlined"
-                secureTextEntry={!passwordVisible}
-                style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-                right={<TextInput.Icon icon={passwordVisible ? "eye-off" : "eye"} onPress={() => setPasswordVisible(!passwordVisible)} />}
-            />
-            <Button style={styles.textButton}>
-                Esqueceu sua senha?
-            </Button>
-            <Button style={styles.textButton} onPress={() => navigation.navigate('Cadastro')}>
-                Não tem uma conta? Cadastrar-se
-            </Button>
-            <Button mode="contained" style={styles.button} onPress={handleSignIn}>
-                Entrar
-            </Button>
-            <Snackbar
-                visible={snackbarVisible}
-                onDismiss={() => setSnackbarVisible(false)}
-                duration={3000}
-            >
-                {snackbarMessage}
-            </Snackbar>
-        </View>
+        </ScrollView>
     );
 };
 
 const styles = StyleSheet.create({
+    scrollContainer: {
+        flexGrow: 1,
+    },
     container: {
         flex: 1,
         justifyContent: 'center',
@@ -179,9 +184,6 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
     textButton: {
-        marginBottom: 5,
-    },
-    text: {
         marginBottom: 5,
     },
     radioGroup: {

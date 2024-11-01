@@ -1,39 +1,40 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'; 
-import { View, Image, TouchableOpacity, Text, ScrollView, ActivityIndicator, Modal, TouchableWithoutFeedback } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { View, Image, TouchableOpacity, Text, ScrollView, ActivityIndicator, Modal, TouchableWithoutFeedback, Alert } from 'react-native';
 import { TextInputMask } from 'react-native-masked-text';
 import { useNavigation, DrawerActions, useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
-import { useUser } from '../UserContext'; // Importe o contexto do usuário
-import { styles } from './ConsultasStylesRecep'; // Importe seus estilos aqui
-import { supabase } from '../Supabase'; // Importe o Supabase
+import { useUser } from '../UserContext';
+import { styles } from './ConsultasStylesRecep';
+import { supabase } from '../Supabase';
 
 interface Consulta {
+  consul_id: number;
   paci_nome: string;
   paci_cpf: string;
   ubs_nome: string;
   area_nome: string;
   horarios_dia: string;
   horarios_horarios: string;
-  consul_estado: string; // Corrigido de consul_estatos para consul_estado
+  consul_estado: string;
 }
 
 const Consultas = () => {
   const navigation = useNavigation();
-  const { user } = useUser(); // Use o contexto do usuário
+  const { user } = useUser();
   const [date, setDate] = useState('');
   const [consultas, setConsultas] = useState<Consulta[]>([]);
   const [filteredConsultas, setFilteredConsultas] = useState<Consulta[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [selectedConsulta, setSelectedConsulta] = useState<Consulta | null>(null);
   const dateInputRef = useRef(null);
-
-  const [ubsId, setUbsId] = useState<number | null>(null); // Estado para armazenar o ubs_id
+  const [ubsId, setUbsId] = useState<number | null>(null);
 
   const openDrawer = () => {
     navigation.dispatch(DrawerActions.openDrawer());
   };
 
-  // Fetch the ubs_id from Supabase
   const fetchUbsId = async () => {
     try {
       const { data, error } = await supabase
@@ -74,8 +75,8 @@ const Consultas = () => {
   useFocusEffect(
     useCallback(() => {
       const fetchData = async () => {
-        await fetchUbsId(); // Fetch the ubs_id first
-        fetchConsultas(); // Then fetch the consultations
+        await fetchUbsId();
+        fetchConsultas();
       };
 
       fetchData();
@@ -107,13 +108,13 @@ const Consultas = () => {
     let filtered = [];
     switch (status) {
       case 'agendada':
-        filtered = consultas.filter(consulta => consulta.consul_estado === 'Em espera'); // Corrigido consul_estatos para consul_estado
+        filtered = consultas.filter(consulta => consulta.consul_estado === 'Em espera');
         break;
       case 'realizada':
-        filtered = consultas.filter(consulta => consulta.consul_estado === 'Finalizada'); // Corrigido consul_estatos para consul_estado
+        filtered = consultas.filter(consulta => consulta.consul_estado === 'Finalizada');
         break;
       case 'cancelada':
-        filtered = consultas.filter(consulta => consulta.consul_estado === 'Cancelada'); // Corrigido consul_estatos para consul_estado
+        filtered = consultas.filter(consulta => consulta.consul_estado === 'Cancelada');
         break;
       case 'todas':
         filtered = consultas;
@@ -122,7 +123,7 @@ const Consultas = () => {
         filtered = consultas;
         break;
     }
-    filtered.sort((a, b) => (a.consul_estado === 'Em andamento' ? -1 : 1)); // Corrigido consul_estatos para consul_estado
+    filtered.sort((a, b) => (a.consul_estado === 'Em andamento' ? -1 : 1));
     setFilteredConsultas(filtered);
   };
 
@@ -139,6 +140,38 @@ const Consultas = () => {
     }
   };
 
+  const handleUpdateStatus = async (consulId: number, newStatus: string) => {
+    try {
+      console.log(`Atualizando status da consulta com consul_id: ${consulId} para ${newStatus}`);
+
+      const url = `http://192.168.137.1:3000/api/consulta/${consulId}/estado`;
+      await axios.put(url, { consul_estado: newStatus });
+      
+      Alert.alert('Sucesso', `Status da consulta atualizado para "${newStatus}".`);
+      fetchConsultas(date); // Atualiza a lista após a alteração de status
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
+      Alert.alert('Erro', 'Não foi possível atualizar o status da consulta.');
+    }
+  };
+
+  const handleOpenStatusModal = (consulta: Consulta) => {
+    setSelectedConsulta(consulta);
+    setShowStatusModal(true);
+  };
+
+  const handleCloseStatusModal = () => {
+    setShowStatusModal(false);
+    setSelectedConsulta(null);
+  };
+
+  const handleStatusChange = (status: string) => {
+    if (selectedConsulta) {
+      handleUpdateStatus(selectedConsulta.consul_id, status);
+      handleCloseStatusModal(); // Fecha o modal após a atualização
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -149,27 +182,21 @@ const Consultas = () => {
 
   return (
     <View style={styles.container}>
-      {/* Primeiro cabeçalho */}
+      {/* Cabeçalho */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.leftButton} onPress={openDrawer}>
-          <Image
-            source={require('../assets/3 linhas.png')}
-            style={styles.buttonImage}
-          />
+          <Image source={require('../assets/3 linhas.png')} style={styles.buttonImage} />
         </TouchableOpacity>
-        <Image
-          source={require('../assets/ubsLogo.png')}
-          style={styles.centerImage}
-        />
+        <Image source={require('../assets/ubsLogo.png')} style={styles.centerImage} />
       </View>
 
-      {/* Segundo cabeçalho */}
+      {/* Sub-cabeçalho */}
       <View style={styles.secondHeader}>
         <Text style={styles.smallText}>Você está em Home / Consultas</Text>
         <Text style={styles.largeText}>Consultas</Text>
       </View>
 
-      {/* Campo de pesquisa e botão de filtro */}
+      {/* Filtro por data */}
       <View style={styles.filterContainer}>
         <TextInputMask
           ref={dateInputRef}
@@ -184,10 +211,7 @@ const Consultas = () => {
           onSubmitEditing={handleDateSubmit}
         />
         <TouchableOpacity style={styles.filterButton} onPress={openFilterModal}>
-          <Image
-            source={require('../assets/filtrar.png')}
-            style={styles.filterButtonImage}
-          />
+          <Image source={require('../assets/filtrar.png')} style={styles.filterButtonImage} />
           <Text style={styles.filterButtonText}>Filtrar</Text>
         </TouchableOpacity>
       </View>
@@ -202,7 +226,6 @@ const Consultas = () => {
         <TouchableWithoutFeedback onPress={closeFilterModal}>
           <View style={styles.modalBackground}>
             <View style={styles.modalContent}>
-              
               {/* Opções de filtro */}
               <TouchableOpacity style={styles.filterOption} onPress={() => handleFilterOption('todas')}>
                 <Text style={styles.filterOptionText}>Todas as Consultas</Text>
@@ -216,24 +239,60 @@ const Consultas = () => {
               <TouchableOpacity style={styles.filterOption} onPress={() => handleFilterOption('cancelada')}>
                 <Text style={styles.filterOptionText}>Consultas Canceladas</Text>
               </TouchableOpacity>
+              <TouchableOpacity style={styles.closeButton} onPress={closeFilterModal}>
+                <Text style={styles.closeButtonText}>Fechar</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </TouchableWithoutFeedback>
       </Modal>
 
-      {/* Adicionando ScrollView para os cartões */}
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
+      {/* Lista de consultas */}
+      <ScrollView style={styles.scrollContainer}>
         {filteredConsultas.map((consulta, index) => (
           <View key={index} style={getCardStyle(consulta.consul_estado)}>
-            <Text style={styles.cardText}>Nome: {consulta.paci_nome}</Text>
+            <Text style={styles.cardText}>Paciente: {consulta.paci_nome}</Text>
+            <Text style={styles.cardText}>Área: {consulta.area_nome}</Text>
             <Text style={styles.cardText}>UBS: {consulta.ubs_nome}</Text>
             <Text style={styles.cardText}>Data: {consulta.horarios_dia}</Text>
-            <Text style={styles.cardText}>Horário: {consulta.horarios_horarios}</Text>
-            <Text style={styles.cardText}>Área de Atendimento: {consulta.area_nome}</Text>
+            <Text style={styles.cardText}>Hora: {consulta.horarios_horarios}</Text>
             <Text style={styles.cardText}>Status: {consulta.consul_estado}</Text>
+
+            {/* Botão de alterar status */}
+            <TouchableOpacity style={styles.changeStatusButton} onPress={() => handleOpenStatusModal(consulta)}>
+              <Text style={styles.changeStatusButtonText}>Alterar Status</Text>
+            </TouchableOpacity>
           </View>
         ))}
       </ScrollView>
+
+      {/* Modal de alteração de status */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showStatusModal}
+        onRequestClose={handleCloseStatusModal}
+      >
+        <TouchableWithoutFeedback onPress={handleCloseStatusModal}>
+          <View style={styles.modalBackground}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Alterar Status da Consulta</Text>
+              <TouchableOpacity onPress={() => handleStatusChange('Em espera')}>
+                <Text style={styles.statusOption}>Agendada</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleStatusChange('Finalizada')}>
+                <Text style={styles.statusOption}>Realizada</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleStatusChange('Cancelada')}>
+                <Text style={styles.statusOption}>Cancelada</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.closeButton} onPress={handleCloseStatusModal}>
+                <Text style={styles.closeButtonText}>Fechar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 };

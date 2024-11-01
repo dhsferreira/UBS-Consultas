@@ -44,7 +44,7 @@ export default function App() {
   useEffect(() => {
     const fetchUBS = async () => {
       try {
-        const response = await fetch('http://192.168.137.1:3000/api/Ubs');
+        const response = await fetch('http://192.168.1.2:3000/api/Ubs');
         const data = await response.json();
         if (data.error === '') {
           setUbsList(data.result);
@@ -63,7 +63,7 @@ export default function App() {
     if (selectedUBS !== '') {
       const fetchAreas = async () => {
         try {
-          const response = await fetch(`http://192.168.137.1:3000/api/areas/${selectedUBS}`);
+          const response = await fetch(`http://192.168.1.2:3000/api/areas/${selectedUBS}`);
           const data = await response.json();
           if (data.error === '') {
             setAreasList(data.result);
@@ -97,7 +97,7 @@ export default function App() {
     if (selectedAtendimento !== '' && selectedUBS !== '') {
       const fetchDias = async () => {
         try {
-          const response = await fetch(`http://192.168.137.1:3000/api/ubs/${selectedUBS}/areas/${selectedAtendimento}/horarios`); 
+          const response = await fetch(`http://192.168.1.2:3000/api/ubs/${selectedUBS}/areas/${selectedAtendimento}/horarios`); 
           const data = await response.json(); 
           if (data.error === '') {
             setDiasList(data.result);
@@ -119,7 +119,7 @@ export default function App() {
     if (selectedData !== '' && selectedAtendimento !== '' && selectedUBS !== '') {
       const fetchHorarios = async () => {
         try {
-          const response = await fetch(`http://192.168.137.1:3000/api/horario/horario/${selectedUBS}/${selectedAtendimento}/${selectedData}`);  
+          const response = await fetch(`http://192.168.1.2:3000/api/horario/horario/${selectedUBS}/${selectedAtendimento}/${selectedData}`);  
           const data = await response.json();
           if (data.error === '') {
             const formattedHorarios = data.result.map((item: Horario) => ({
@@ -171,7 +171,7 @@ export default function App() {
     console.log('Dados da consulta:', consultaData); // Adicionando log para inspecionar os dados
 
     try {
-      const response = await fetch('http://192.168.137.1:3000/api/consultas/criar', {
+      const response = await fetch('http://192.168.1.2:3000/api/consultas/criar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

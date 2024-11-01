@@ -27,7 +27,7 @@ const ExamesScreen = ({ route }) => {
 
   const fetchConsultas = async () => {
     try {
-      const response = await axios.get(`http://10.47.2.96:3000/api/Consulta/${paciId}`);
+      const response = await axios.get(`http://192.168.1.2:3000/api/Consulta/${paciId}`);
       setConsultas(response.data.result || []);
       setFilteredConsultas(response.data.result || []);
     } catch (error) {
@@ -37,7 +37,7 @@ const ExamesScreen = ({ route }) => {
 
   const fetchExames = async () => {
     try {
-      const response = await axios.get(`http://10.47.2.96:3000/api/paciente/${paciId}/exames`);
+      const response = await axios.get(`http://192.168.1.2:3000/api/paciente/${paciId}/exames`);
       setExames(response.data.result || []);
       setFilteredExames(response.data.result || []);
     } catch (error) {
@@ -47,7 +47,7 @@ const ExamesScreen = ({ route }) => {
 
   const fetchReceitas = async () => {
     try {
-      const response = await axios.get(`http://10.47.2.96:3000/api/paciente/${paciId}/receitas`);
+      const response = await axios.get(`http://192.168.1.2:3000/api/paciente/${paciId}/receitas`);
       setReceitas(response.data.result || []);
       setFilteredReceitas(response.data.result || []);
     } catch (error) {
@@ -227,7 +227,7 @@ const ExamesScreen = ({ route }) => {
       )}
        <TouchableOpacity
         style={styles.createRecipeButton}
-        onPress={() => navigation.navigate('Criar', { paciId })}
+        onPress={() => navigation.navigate('CriarExame', { paciId })}
       >
         <Text style={styles.createRecipeButtonText}>Criar Receita</Text>
       </TouchableOpacity>
@@ -238,12 +238,15 @@ const ExamesScreen = ({ route }) => {
   return (
     <View style={{ flex: 1 }}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.leftButton} onPress={() => { /* lógica para abrir o drawer */ }}>
-          <Image source={require('../assets/3 linhas.png')} style={styles.buttonImage} />
-        </TouchableOpacity>
-        <Image source={require('../assets/ubsLogo.png')} style={styles.centerImage} />
-      </View>
-
+    <TouchableOpacity style={styles.leftButton} onPress={() => { /* lógica para abrir o drawer */ }}>
+      <Image source={require('../assets/3 linhas.png')} style={styles.buttonImage} />
+    </TouchableOpacity>
+    
+    {/* Logo como botão para navegar para outra tela */}
+    <TouchableOpacity onPress={() => navigation.navigate('Noticias')}>
+      <Image source={require('../assets/ubsLogo.png')} style={styles.centerImage} />
+    </TouchableOpacity>
+  </View>
       <View style={styles.secondHeader}>
         <Text style={styles.smallText}>Você está em Home / Perfil do paciente</Text>
         <Text style={styles.largeText}>Perfil do paciente</Text>

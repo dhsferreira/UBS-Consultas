@@ -1,26 +1,26 @@
 import React from 'react';
 import { createDrawerNavigator } from '@react-navigation/drawer';
-import LoginScreen from '../Login/Login'; 
-import CadastroScreen from '../Cadastro/Cadastro'; 
-import NoticiasScreen from '../Noticias/telaNoticias'; 
-import ConsultasScreen from '../Consultas/Consultas'; 
-import AgendarScreen from '../Agendar/Agendar'; 
+import { createStackNavigator } from '@react-navigation/stack';
+import LoginScreen from '../Login/Login';
+import CadastroScreen from '../Cadastro/Cadastro';
+import NoticiasScreen from '../Noticias/telaNoticias';
+import ConsultasScreen from '../Consultas/Consultas';
+import AgendarScreen from '../Agendar/Agendar';
+import UserScreen from '../Usuario/UserScreen';
+import ConsultaRecepScreen from '../Consultas Recep/ConsultasRecep';
+import AgendarHoraScreen from '../AgendarHora/AgendarHora';
+import ConsultaMedScreen from '../Consultas Med/ConsultasMed';
+import ExamesMedScreen from '../Exames Med/ExamesMed';
+import CriarExame from '../CriarExame/CriarExame';
 import CustomDrawerContent from './CustomDrawerContent';
-import UserInfo from '../UserInfo'; 
-import UserScreen from '../Usuario/UserScreen'; 
-import ConsultaRecepScreen from '../Consultas Recep/ConsultasRecep'; 
-import AgendarHoraScreen from '../AgendarHora/AgendarHora'; 
-import ConsultaMedScreen from '../Consultas Med/ConsultasMed'; 
-import ExamesMedScreen from '../Exames Med/ExamesMed'; 
-import CriarExame from '../CriarExame/CriarExame'; 
-
-import { Ionicons } from '@expo/vector-icons'; 
-import { useUser } from '../UserContext'; 
+import { Ionicons } from '@expo/vector-icons';
+import { useUser } from '../UserContext';
 
 const Drawer = createDrawerNavigator();
+const Stack = createStackNavigator();
 
-export default function DrawerRoutes() {
-  const { user } = useUser(); 
+function DrawerRoutes() {
+  const { user } = useUser();
 
   return (
     <Drawer.Navigator
@@ -58,14 +58,14 @@ export default function DrawerRoutes() {
             name="Noticias"
             component={NoticiasScreen}
             options={{
-              drawerLabel: 'Noticias',
+              drawerLabel: 'Notícias',
               drawerIcon: ({ color, size }) => (
-                <Ionicons name="person" size={size} color={color} />
+                <Ionicons name="newspaper" size={size} color={color} />
               ),
             }}
           />
           <Drawer.Screen
-            name="consultas"
+            name="Consultas"
             component={ConsultasScreen}
             options={{
               drawerLabel: 'Minhas Consultas',
@@ -80,15 +80,15 @@ export default function DrawerRoutes() {
             options={{
               drawerLabel: 'Agendar Consulta',
               drawerIcon: ({ color, size }) => (
-                <Ionicons name="person" size={size} color={color} />
+                <Ionicons name="calendar" size={size} color={color} />
               ),
             }}
           />
           <Drawer.Screen
-            name="usuario"
+            name="Usuario"
             component={UserScreen}
             options={{
-              drawerLabel: 'usuario',
+              drawerLabel: 'Usuário',
               drawerIcon: ({ color, size }) => (
                 <Ionicons name="person" size={size} color={color} />
               ),
@@ -101,39 +101,39 @@ export default function DrawerRoutes() {
             name="Noticias"
             component={NoticiasScreen}
             options={{
-              drawerLabel: 'Noticias',
+              drawerLabel: 'Notícias',
               drawerIcon: ({ color, size }) => (
-                <Ionicons name="person" size={size} color={color} />
+                <Ionicons name="newspaper" size={size} color={color} />
               ),
             }}
           />
           <Drawer.Screen
-            name="usuario"
+            name="Usuario"
             component={UserScreen}
             options={{
-              drawerLabel: 'usuario',
+              drawerLabel: 'Usuário',
               drawerIcon: ({ color, size }) => (
                 <Ionicons name="person" size={size} color={color} />
               ),
             }}
           />
           <Drawer.Screen
-            name="Consul_Recep"
+            name="ConsultasRecep"
             component={ConsultaRecepScreen}
             options={{
               drawerLabel: 'Consultas',
               drawerIcon: ({ color, size }) => (
-                <Ionicons name="person" size={size} color={color} />
+                <Ionicons name="albums" size={size} color={color} />
               ),
             }}
           />
           <Drawer.Screen
-            name="AgendarHora_Recep"
+            name="AgendarHoraRecep"
             component={AgendarHoraScreen}
             options={{
-              drawerLabel: 'Cadastrar Horario',
+              drawerLabel: 'Cadastrar Horário',
               drawerIcon: ({ color, size }) => (
-                <Ionicons name="person" size={size} color={color} />
+                <Ionicons name="time" size={size} color={color} />
               ),
             }}
           />
@@ -144,57 +144,49 @@ export default function DrawerRoutes() {
             name="Noticias"
             component={NoticiasScreen}
             options={{
-              drawerLabel: 'Noticias',
+              drawerLabel: 'Notícias',
               drawerIcon: ({ color, size }) => (
-                <Ionicons name="person" size={size} color={color} />
+                <Ionicons name="newspaper" size={size} color={color} />
               ),
             }}
           />
           <Drawer.Screen
-            name="usuario"
+            name="Usuario"
             component={UserScreen}
             options={{
-              drawerLabel: 'usuario',
+              drawerLabel: 'Usuário',
               drawerIcon: ({ color, size }) => (
                 <Ionicons name="person" size={size} color={color} />
               ),
             }}
           />
           <Drawer.Screen
-            name="Consul_med"
+            name="ConsultasMed"
             component={ConsultaMedScreen}
             options={{
               drawerLabel: 'Consultas',
               drawerIcon: ({ color, size }) => (
-                <Ionicons name="person" size={size} color={color} />
+                <Ionicons name="albums" size={size} color={color} />
               ),
             }}
           />
-
-<Drawer.Screen
-            name="Exames"
-            component={ExamesMedScreen}
-            options={{
-              drawerLabel: 'Exames',
-              drawerIcon: ({ color, size }) => (
-                <Ionicons name="document-text" size={size} color={color} />
-              ),
-              
-            }}
-          />
-
-<Drawer.Screen
-            name="Criar"
-            component={CriarExame}
-            options={{
-              drawerLabel: 'Criar',
-              drawerIcon: ({ color, size }) => (
-                <Ionicons name="person" size={size} color={color} />
-              ),
-            }}
-          />
+         
+          
         </>
       ) : null}
     </Drawer.Navigator>
+  );
+}
+
+export default function AppNavigator() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {/* Inclui o Drawer Navigator */}
+      <Stack.Screen name="Drawer" component={DrawerRoutes} />
+      
+      {/* Adiciona as telas ocultas no Stack Navigator */}
+      <Stack.Screen name="CriarExame" component={CriarExame} />
+      <Stack.Screen name="ExamesMed" component={ExamesMedScreen} />
+    </Stack.Navigator>
   );
 }

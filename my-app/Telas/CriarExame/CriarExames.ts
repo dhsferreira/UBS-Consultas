@@ -2,15 +2,21 @@ import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5', // Cor de fundo leve
-    padding: 16,
+   
+      flex: 1,
+      backgroundColor: '#E6EEFA',
+  
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: 'white',
+      padding: 30,
+      position: 'relative',
+      borderBottomWidth: 1,
+      borderBottomColor: 'black',
+  
   },
   leftButton: {
     padding: 10,
@@ -18,23 +24,35 @@ export const styles = StyleSheet.create({
   buttonImage: {
     width: 30,
     height: 30,
+    resizeMode: 'contain',
+    marginTop: 45,
   },
   centerImage: {
-    width: 100,
+    width: 200,
     height: 50,
-    resizeMode: 'contain',
+    marginTop: 30,
+    left: '50%',
+    marginLeft: -200,
+    marginRight: 120,
+    marginBottom: 10,
   },
   secondHeader: {
-    marginVertical: 20,
+    backgroundColor: '#123CD3',
+    padding: 10,
+    width: '100%',
+    alignSelf: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: 'black',
   },
   smallText: {
     fontSize: 14,
-    color: '#555',
+    color: 'white',
   },
   largeText: {
     fontSize: 24,
+    color: 'white',
     fontWeight: 'bold',
-    color: '#333',
+    marginTop: 5,
   },
   form: {
     backgroundColor: '#fff', // Cor de fundo do formulário
