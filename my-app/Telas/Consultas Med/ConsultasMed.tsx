@@ -1,11 +1,20 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Image, TouchableOpacity, Text, ScrollView, ActivityIndicator, Modal, TouchableWithoutFeedback } from 'react-native';
+import { 
+  View, 
+  Image, 
+  TouchableOpacity, 
+  Text, 
+  ScrollView, 
+  ActivityIndicator, 
+  Modal, 
+  TouchableWithoutFeedback 
+} from 'react-native';
 import { TextInputMask } from 'react-native-masked-text';
 import { useNavigation, DrawerActions, useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
-import { useUser } from '../UserContext'; // Importe o contexto do usuário
-import { styles } from './ConsultasStylesMed'; // Importe seus estilos aqui
-import { supabase } from '../Supabase'; // Importe o Supabase
+import { useUser } from '../UserContext'; // Importa o contexto do usuário
+import { styles } from './ConsultasStylesMed'; // Importa estilos
+import { supabase } from '../Supabase'; // Importa Supabase
 
 interface Consulta {
   paci_nome: string;
@@ -14,38 +23,33 @@ interface Consulta {
   area_nome: string;
   horarios_dia: string;
   horarios_horarios: string;
-  consul_estado: string; // Corrigido de consul_estatos para consul_estado
+  consul_estado: string;
 }
 
 const Consultas = () => {
   const navigation = useNavigation();
-  const { user } = useUser(); // Use o contexto do usuário
+  const { user } = useUser();
   const [date, setDate] = useState('');
   const [consultas, setConsultas] = useState<Consulta[]>([]);
   const [filteredConsultas, setFilteredConsultas] = useState<Consulta[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const dateInputRef = useRef(null);
-
-  const [ubsId, setUbsId] = useState<number | null>(null); // Estado para armazenar o ubs_id
+  const [ubsId, setUbsId] = useState<number | null>(null);
 
   const openDrawer = () => {
     navigation.dispatch(DrawerActions.openDrawer());
   };
 
-  // Fetch the ubs_id from Supabase
   const fetchUbsId = async () => {
     try {
       const { data, error } = await supabase
-        .from('medico')  // Alterado de 'recepcionista' para 'medico'
+        .from('medico')
         .select('ubs_id')
-        .eq('medi_id', user.id)  // Agora filtrando pelo 'medi_id' do médico logado
+        .eq('medi_id', user.id)
         .single();
 
-      if (error) {
-        throw error;
-      }
-      
+      if (error) throw error;
       setUbsId(data.ubs_id);
     } catch (error) {
       console.error('Erro ao buscar ubs_id:', error);
@@ -55,23 +59,17 @@ const Consultas = () => {
   const fetchConsultas = async (selectedDate?: string) => {
     try {
       if (ubsId !== null) {
-        // Primeiro, busque o area_nome da tabela medico
         const { data: medicoData, error: medicoError } = await supabase
           .from('medico')
-          .select('medi_area') // A coluna medi_area deve ser o nome da área
-          .eq('medi_id', user.id) // Aqui, estou assumindo que você tem medi_id no contexto do usuário
+          .select('medi_area')
+          .eq('medi_id', user.id)
           .single();
-  
-        if (medicoError) {
-          throw medicoError;
-        }
-  
-        const areaNome = medicoData.medi_area; // Obtenha o area_nome
-  
+
+        if (medicoError) throw medicoError;
+        const areaNome = medicoData.medi_area;
+
         let url = `http://192.168.137.1:3000/api/consultas/ubs/${ubsId}/area/${areaNome}`;
-        if (selectedDate) {
-          url += `?data=${selectedDate}`;
-        }
+        if (selectedDate) url += `?data=${selectedDate}`;
         
         const response = await axios.get(url);
         const consultasData: Consulta[] = response.data.result;
@@ -84,15 +82,13 @@ const Consultas = () => {
       setLoading(false);
     }
   };
-  
 
   useFocusEffect(
     useCallback(() => {
       const fetchData = async () => {
-        await fetchUbsId(); // Fetch the ubs_id first
-        fetchConsultas(); // Then fetch the consultations
+        await fetchUbsId();
+        fetchConsultas();
       };
-
       fetchData();
     }, [ubsId])
   );
@@ -109,17 +105,12 @@ const Consultas = () => {
     }
   };
 
-  const openFilterModal = () => {
-    setShowFilterModal(true);
-  };
-
-  const closeFilterModal = () => {
-    setShowFilterModal(false);
-  };
+  const openFilterModal = () => setShowFilterModal(true);
+  const closeFilterModal = () => setShowFilterModal(false);
 
   const handleFilterOption = (status: string) => {
     closeFilterModal();
-    let filtered = [];
+    let filtered = consultas;
     switch (status) {
       case 'agendada':
         filtered = consultas.filter(consulta => consulta.consul_estado === 'Em espera');
@@ -130,12 +121,6 @@ const Consultas = () => {
       case 'cancelada':
         filtered = consultas.filter(consulta => consulta.consul_estado === 'Cancelada');
         break;
-      case 'todas':
-        filtered = consultas;
-        break;
-      default:
-        filtered = consultas;
-        break;
     }
     filtered.sort((a, b) => (a.consul_estado === 'Em andamento' ? -1 : 1));
     setFilteredConsultas(filtered);
@@ -143,31 +128,19 @@ const Consultas = () => {
 
   const getCardStyle = (status: string) => {
     switch (status) {
-      case 'Em espera':
-        return [styles.card, { backgroundColor: 'rgba(255, 255, 0, 0.3)' }];
-      case 'Finalizada':
-        return [styles.card, { backgroundColor: 'rgba(0, 255, 0, 0.3)' }];
-      case 'Cancelada':
-        return [styles.card, { backgroundColor: 'rgba(255, 0, 0, 0.3)' }];
-      default:
-        return styles.card;
+      case 'Em espera': return [styles.card, { backgroundColor: 'rgba(255, 255, 0, 0.3)' }];
+      case 'Finalizada': return [styles.card, { backgroundColor: 'rgba(0, 255, 0, 0.3)' }];
+      case 'Cancelada': return [styles.card, { backgroundColor: 'rgba(255, 0, 0, 0.3)' }];
+      default: return styles.card;
     }
   };
 
   const handleExames = async (consulta: Consulta) => {
     try {
-      // Realiza a requisição para buscar o paci_id pelo nome do paciente
       const response = await axios.get(`http://192.168.137.1:3000/api/BuscarNome/${consulta.paci_nome}`);
-      
-      // Log da resposta completa para verificar a estrutura
-      console.log('Resposta da API:', response.data);
-      
-      // Verifica se a resposta contém o paci_id dentro de result
       if (response.data && response.data.result && response.data.result.paci_id) {
         const paciId = response.data.result.paci_id;
-  
-        // Navega para a tela de exames passando o paci_id e os dados da consulta
-        navigation.navigate('Exames', { consulta, paciId });
+        navigation.navigate('ExamesMed', { consulta, paciId });
       } else {
         console.error('Erro: paci_id não encontrado na resposta.');
       }
@@ -175,11 +148,8 @@ const Consultas = () => {
       console.error('Erro ao buscar paci_id:', error);
     }
   };
-  
-  
 
   const handleReceitas = (consulta: Consulta) => {
-    // Lógica para navegar ou buscar receitas relacionadas à consulta
     console.log('Navegando para receitas de:', consulta);
   };
 
@@ -246,7 +216,6 @@ const Consultas = () => {
         <TouchableWithoutFeedback onPress={closeFilterModal}>
           <View style={styles.modalBackground}>
             <View style={styles.modalContent}>
-              {/* Opções de filtro */}
               <TouchableOpacity style={styles.filterOption} onPress={() => handleFilterOption('todas')}>
                 <Text style={styles.filterOptionText}>Todas as Consultas</Text>
               </TouchableOpacity>
@@ -268,21 +237,20 @@ const Consultas = () => {
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         {filteredConsultas.map((consulta, index) => (
           <View key={index} style={getCardStyle(consulta.consul_estado)}>
-            <Text style={styles.cardText}>Nome: {consulta.paci_nome}</Text>
-            <Text style={styles.cardText}>CPF: {consulta.paci_cpf}</Text>
-            <Text style={styles.cardText}>Área Médica: {consulta.area_nome}</Text>
-            <Text style={styles.cardText}>UBS: {consulta.ubs_nome}</Text>
-            <Text style={styles.cardText}>Data: {consulta.horarios_dia}</Text>
-            <Text style={styles.cardText}>Horário: {consulta.horarios_horarios}</Text>
-            <Text style={styles.cardText}>Status: {consulta.consul_estado}</Text>
-
-            {/* Botões de ação */}
+            <Text style={styles.consultaText}>Paciente: {consulta.paci_nome}</Text>
+            <Text style={styles.consultaText}>CPF: {consulta.paci_cpf}</Text>
+            <Text style={styles.consultaText}>UBS: {consulta.ubs_nome}</Text>
+            <Text style={styles.consultaText}>Área: {consulta.area_nome}</Text>
+            <Text style={styles.consultaText}>Data: {consulta.horarios_dia}</Text>
+            <Text style={styles.consultaText}>Horário: {consulta.horarios_horarios}</Text>
+            <Text style={styles.consultaText}>Status: {consulta.consul_estado}</Text>
             <View style={styles.buttonContainer}>
               <TouchableOpacity style={styles.button} onPress={() => handleExames(consulta)}>
-                <Text style={styles.buttonText}>Ver Perfil de Paciente</Text>
+                <Text style={styles.buttonText}>Exames</Text>
               </TouchableOpacity>
-
-             
+              <TouchableOpacity style={styles.button} onPress={() => handleReceitas(consulta)}>
+                <Text style={styles.buttonText}>Receitas</Text>
+              </TouchableOpacity>
             </View>
           </View>
         ))}

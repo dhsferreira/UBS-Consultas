@@ -1,12 +1,15 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, Image, Alert } from 'react-native';
+import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import axios from 'axios';
 import { TextInputMask } from 'react-native-masked-text';
-import { styles } from '../Exames Med/ExamesStylesMed'; 
-import { supabase } from '../Supabase'; 
+import { styles } from '../Exames Med/ExamesStylesMed';
+import { supabase } from '../Supabase';
+import { useNavigation, DrawerActions, useFocusEffect } from '@react-navigation/native';
 
 const ExamesScreen = ({ route }) => {
-  const { paciId } = route.params; 
+  const { paciId } = route.params;
+  const navigation = useNavigation();
   const [consultas, setConsultas] = useState([]);
   const [filteredConsultas, setFilteredConsultas] = useState([]);
   const [exames, setExames] = useState([]);
@@ -21,11 +24,11 @@ const ExamesScreen = ({ route }) => {
   const [selectedFilter, setSelectedFilter] = useState('todas');
   const [expandedExameId, setExpandedExameId] = useState(null);
   const [expandedReceitaId, setExpandedReceitaId] = useState(null); // Controle de expansão dos exames
-  const dateInputRef = useRef(null); 
+  const dateInputRef = useRef(null);
 
   const fetchConsultas = async () => {
     try {
-      const response = await axios.get(`http://192.168.0.101:3000/api/Consulta/${paciId}`);
+      const response = await axios.get(`http://192.168.0.103:3000/api/Consulta/${paciId}`);
       setConsultas(response.data.result || []);
       setFilteredConsultas(response.data.result || []);
     } catch (error) {
@@ -35,7 +38,7 @@ const ExamesScreen = ({ route }) => {
 
   const fetchExames = async () => {
     try {
-      const response = await axios.get(`http://192.168.0.101:3000/api/paciente/${paciId}/exames`);
+      const response = await axios.get(`http://192.168.0.103:3000/api/paciente/${paciId}/exames`);
       setExames(response.data.result || []);
       setFilteredExames(response.data.result || []);
     } catch (error) {
@@ -45,11 +48,11 @@ const ExamesScreen = ({ route }) => {
 
   const fetchReceitas = async () => {
     try {
-      const response = await axios.get(`http://192.168.0.101:3000/api/paciente/${paciId}/receitas`);
+      const response = await axios.get(`http://192.168.0.103:3000/api/paciente/${paciId}/receitas`); // Corrigido URL
       setReceitas(response.data.result || []);
       setFilteredReceitas(response.data.result || []);
     } catch (error) {
-      console.error('Erro ao buscar Receitas:', error);
+      console.error('Erro ao buscar receitas:', error);
     }
   };
 
@@ -72,6 +75,7 @@ const ExamesScreen = ({ route }) => {
   };
 
   useEffect(() => {
+    console.log("Paciente ID:", paciId);
     if (selectedMenu === 'Exames') {
       fetchExames();
     } else if (selectedMenu === 'Consultas') {
@@ -84,9 +88,9 @@ const ExamesScreen = ({ route }) => {
   }, [selectedMenu, paciId]);
 
   const handleDateSubmit = () => {
-    const formattedDate = date.split('/').reverse().join('-'); 
+    const formattedDate = date.split('/').reverse().join('-');
     const filtered = consultas.filter(consulta =>
-      consulta.horarios_dia.includes(formattedDate) 
+      consulta.horarios_dia.includes(formattedDate)
     );
     setFilteredConsultas(date ? filtered : consultas);
   };
@@ -165,7 +169,6 @@ const ExamesScreen = ({ route }) => {
             <TouchableOpacity
               style={styles.expandButton}
               onPress={() => {
-                // Altera o ID expandido. Se o ID atual for igual ao que está expandido, fecha, senão, abre o novo
                 setExpandedExameId(prevId => (prevId === exame.exame_id ? null : exame.exame_id));
               }}
             >
@@ -186,20 +189,46 @@ const ExamesScreen = ({ route }) => {
     </ScrollView>
   );
 
+  const exportReceitaToPDF = async (receita) => {
+    const htmlContent = `
+      <h1>Detalhes da Receita</h1>
+      <p><strong>Nome do Paciente:</strong> ${receita.paci_nome}</p>
+      <p><strong>UBS:</strong> ${receita.ubs_nome}</p>
+      <p><strong>Medicamento:</strong> ${receita.medicamento_nome}</p>
+      <p><strong>Dosagem:</strong> ${receita.dosagem}</p>
+      <p><strong>Frequência de Uso:</strong> ${receita.frequencia_dosagem}</p>
+      <p><strong>Tempo de Uso:</strong> ${receita.tempo_uso}</p>
+      <p><strong>Data de Emissão:</strong> ${receita.data_emissao}</p>
+      <p><strong>Data de Validade:</strong> ${receita.data_validade}</p>
+      <p><strong>Observações:</strong> ${receita.observacoes || 'N/A'}</p>
+    `;
+
+    try {
+      const pdf = await RNHTMLtoPDF.convert({
+        html: htmlContent,
+        fileName: `Receita_${receita.receita_id}`,
+        base64: true,
+      });
+
+      Alert.alert('PDF Gerado com Sucesso', `O PDF foi gerado com sucesso: ${pdf.filePath}`);
+    } catch (error) {
+      console.error('Erro ao gerar o PDF:', error);
+    }
+  };
+
   const renderReceitas = () => (
     <ScrollView contentContainerStyle={styles.scrollViewContent}>
       {filteredReceitas.length > 0 ? (
         filteredReceitas.map((receita, index) => (
-          <View key={index} style={styles.card}>
-            <Text>Nome do Paciente: {receita.paci_nome}</Text>
-            <Text>UBS: {receita.ubs_nome}</Text>
+          <View key={receita.receita_id} style={styles.card}>
+            <Text>Nome: {receita.paci_nome}</Text>
+            <Text>Medicamento: {receita.medicamento_nome}</Text>
+            <Text>Dosagem: {receita.dosagem}</Text>
             <Text>Data de Emissão: {receita.data_emissao}</Text>
-           
-            
             <TouchableOpacity
               style={styles.expandButton}
               onPress={() => {
-                // Altera o ID expandido. Se o ID atual for igual ao que está expandido, fecha, senão, abre o novo
+                // Atualiza o estado para mostrar ou esconder os detalhes apenas do card clicado
                 setExpandedReceitaId(prevId => (prevId === receita.receita_id ? null : receita.receita_id));
               }}
             >
@@ -207,15 +236,17 @@ const ExamesScreen = ({ route }) => {
                 {expandedReceitaId === receita.receita_id ? 'Ocultar Detalhes' : 'Ver Detalhes'}
               </Text>
             </TouchableOpacity>
-  
             {expandedReceitaId === receita.receita_id && (
               <View style={styles.resultsContainer}>
-                <Text>-Medicamento: {receita.medicamento_nome}</Text>
-                <Text>-Dosagem: {receita.dosagem}</Text>
-                <Text>-Frequência de Uso: {receita.frequencia_dosagem}</Text>
-                <Text>-Tempo de Uso: {receita.tempo_uso}</Text>
-                <Text>-Data de Validade: {receita.data_validade}</Text>
-                <Text>-Observação: {receita.observacao_medica}</Text>
+                <Text style={styles.boldText}>Frequência: {receita.frequencia_dosagem}</Text>
+                <Text style={styles.boldText}>Tempo de Uso: {receita.tempo_uso}</Text>
+                <Text style={styles.boldText}>Observações: {receita.observacoes || 'N/A'}</Text>
+                <TouchableOpacity
+                  onPress={() => exportReceitaToPDF(receita)}
+                  style={styles.exportButton}
+                >
+                  <Text style={styles.exportButtonText}>Exportar PDF</Text>
+                </TouchableOpacity>
               </View>
             )}
           </View>
@@ -223,73 +254,64 @@ const ExamesScreen = ({ route }) => {
       ) : (
         <Text>Nenhuma receita encontrada</Text>
       )}
+  
+      {/* Botão para levar para outra tela */}
+      <TouchableOpacity
+        style={styles.navigateButton} // Defina o estilo para o botão
+        onPress={() => {
+          // Navega para a tela "OutraTela"
+          navigation.navigate('CriarExame', {paciId }); // Substitua "OutraTela" pelo nome real da sua tela
+        }}
+      >
+        <Text style={styles.navigateButtonText}>Ir para outra tela</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
   
+  
+
   return (
-    <View style={{ flex: 1 }}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.leftButton} onPress={() => { /* lógica para abrir o drawer */ }}>
-          <Image source={require('../assets/3 linhas.png')} style={styles.buttonImage} />
-        </TouchableOpacity>
-        <Image source={require('../assets/ubsLogo.png')} style={styles.centerImage} />
-      </View>
-
-      <View style={styles.secondHeader}>
-        <Text style={styles.smallText}>Você está em Home / Perfil do paciente</Text>
-        <Text style={styles.largeText}>Perfil do paciente</Text>
-      </View>
-
+    <View style={styles.container}>
+      {/* Menu Section */}
       <View style={styles.menuContainer}>
         {['Perfil', 'Consultas', 'Exames', 'Receitas'].map(menu => (
           <TouchableOpacity
             key={menu}
-            style={[styles.menuButton, selectedMenu === menu && styles.menuButtonSelected]}
+            style={[styles.menuButton, selectedMenu === menu && styles.selectedMenuButton]}
             onPress={() => setSelectedMenu(menu)}
           >
-            <Text style={[styles.menuButtonText, selectedMenu === menu && styles.menuButtonTextSelected]}>
+            <Text style={[styles.menuButtonText, selectedMenu === menu && styles.selectedMenuButtonText]}>
               {menu}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {/* Campo de pesquisa e botão de filtro */}
-      {(selectedMenu === 'Consultas' || selectedMenu === 'Exames' || selectedMenu === 'Receitas') && (
-        <View style={styles.filterContainer}>
-          <TextInputMask
-            ref={dateInputRef}
-            type={'datetime'}
-            options={{ format: 'DD/MM/YYYY' }}
-            value={date}
-            onChangeText={text => setDate(text)}
-            style={styles.dateInput}
-            placeholder="Selecione a data"
-            placeholderTextColor="#000"
-            returnKeyType="done"
-            onSubmitEditing={handleDateSubmit}
-          />
-          <TouchableOpacity style={styles.filterButton} onPress={openFilterModal}>
-            <Text style={styles.filterButtonText}>Filtrar</Text>
+      {/* Content Section based on the selected menu */}
+      <ScrollView contentContainerStyle={styles.scrollViewContent}>
+        {selectedMenu === 'Perfil' && renderProfile()}
+        {selectedMenu === 'Consultas' && renderConsultas()}
+        {selectedMenu === 'Exames' && renderExames()}
+        {selectedMenu === 'Receitas' && renderReceitas()}
+      </ScrollView>
+
+      {/* Filter Modal */}
+      <Modal
+        visible={filterModalVisible}
+        onRequestClose={closeFilterModal}
+        animationType="slide"
+      >
+        <View style={styles.filterModalContainer}>
+          <Text style={styles.filterModalTitle}>Filtrar Consultas</Text>
+          <TouchableOpacity onPress={() => handleFilterOption('todas')}>
+            <Text style={styles.filterOption}>Todas</Text>
           </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Renderização do conteúdo com base no menu selecionado */}
-      {selectedMenu === 'Perfil' && renderProfile()}
-      {selectedMenu === 'Consultas' && renderConsultas()}
-      {selectedMenu === 'Exames' && renderExames()}
-      {selectedMenu === 'Receitas' && renderReceitas()}
-
-      {/* Modal de filtro */}
-      <Modal visible={filterModalVisible} animationType="slide">
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Filtrar Consultas por Status</Text>
-          {['todas', 'confirmada', 'pendente', 'cancelada'].map(status => (
-            <TouchableOpacity key={status} onPress={() => handleFilterOption(status)}>
-              <Text style={styles.modalOption}>{status}</Text>
-            </TouchableOpacity>
-          ))}
+          <TouchableOpacity onPress={() => handleFilterOption('agendado')}>
+            <Text style={styles.filterOption}>Agendado</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => handleFilterOption('concluido')}>
+            <Text style={styles.filterOption}>Concluído</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={closeFilterModal}>
             <Text style={styles.closeModal}>Fechar</Text>
           </TouchableOpacity>

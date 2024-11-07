@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'; 
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Image, TouchableOpacity, Text, ScrollView, ActivityIndicator, Modal, TouchableWithoutFeedback } from 'react-native';
 import { TextInputMask } from 'react-native-masked-text';
 import { useNavigation, DrawerActions, useFocusEffect } from '@react-navigation/native';
@@ -34,7 +34,7 @@ const Consultas = () => {
 
   const fetchConsultas = async (selectedDate?: string) => {
     try {
-      let url = `http://192.168.1.2:3000/api/Consulta/${paci_id}`;
+      let url = `http://192.168.137.1:3000/api/Consulta/${paci_id}`;
       if (selectedDate) {
         url += `?data=${selectedDate}`;
       }
@@ -177,7 +177,6 @@ const Consultas = () => {
         <TouchableWithoutFeedback onPress={closeFilterModal}>
           <View style={styles.modalBackground}>
             <View style={styles.modalContent}>
-              
               {/* Opções de filtro */}
               <TouchableOpacity style={styles.filterOption} onPress={() => handleFilterOption('todas')}>
                 <Text style={styles.filterOptionText}>Todas as Consultas</Text>

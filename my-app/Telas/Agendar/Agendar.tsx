@@ -4,6 +4,8 @@ import { Picker } from '@react-native-picker/picker';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useUser } from "../UserContext";
+import { useNavigation } from '@react-navigation/native';
+import * as Notifications from 'expo-notifications'; // Importa as notificações
 
 interface UBS {
   ubs_id: number;
@@ -30,6 +32,15 @@ const formatDate = (dateString: string) => {
   return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
 };
 
+// Configuração de notificações
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
+
 export default function App() {
   const [selectedUBS, setSelectedUBS] = useState('');
   const [selectedAtendimento, setSelectedAtendimento] = useState('');
@@ -40,6 +51,7 @@ export default function App() {
   const [diasList, setDiasList] = useState<Dia[]>([]);
   const [horariosList, setHorariosList] = useState<Horario[]>([]);
   const { user } = useUser();
+  const navigation = useNavigation();
 
   useEffect(() => {
     const fetchUBS = async () => {
@@ -67,7 +79,6 @@ export default function App() {
           const data = await response.json();
           if (data.error === '') {
             setAreasList(data.result);
-            console.log('Áreas recebidas:', data.result); // Log para inspecionar as áreas
           } else {
             console.error('Erro ao buscar as áreas:', data.error);
           }
@@ -83,22 +94,11 @@ export default function App() {
   }, [selectedUBS]);
 
   useEffect(() => {
-    if (selectedAtendimento !== '') {
-      const area = areasList.find(a => a.area_nome === selectedAtendimento);
-      if (area) {
-        console.log('area_id:', area.area_id); // Log para verificar o area_id
-      } else {
-        console.error('Área não encontrada para o atendimento selecionado:', selectedAtendimento);
-      }
-    }
-  }, [selectedAtendimento, areasList]);
-
-  useEffect(() => {
     if (selectedAtendimento !== '' && selectedUBS !== '') {
       const fetchDias = async () => {
         try {
-          const response = await fetch(`http://192.168.137.1:3000/api/ubs/${selectedUBS}/areas/${selectedAtendimento}/horarios`); 
-          const data = await response.json(); 
+          const response = await fetch(`http://192.168.137.1:3000/api/ubs/${selectedUBS}/areas/${selectedAtendimento}/horarios`);
+          const data = await response.json();
           if (data.error === '') {
             setDiasList(data.result);
           } else {
@@ -119,12 +119,12 @@ export default function App() {
     if (selectedData !== '' && selectedAtendimento !== '' && selectedUBS !== '') {
       const fetchHorarios = async () => {
         try {
-          const response = await fetch(`http://192.168.137.1:3000/api/horario/horario/${selectedUBS}/${selectedAtendimento}/${selectedData}`);  
+          const response = await fetch(`http://192.168.137.1:3000/api/horario/horario/${selectedUBS}/${selectedAtendimento}/${selectedData}`);
           const data = await response.json();
           if (data.error === '') {
             const formattedHorarios = data.result.map((item: Horario) => ({
               ...item,
-              horarios_horarios: item.horarios_horarios.slice(0, 5)  // Remove os segundos
+              horarios_horarios: item.horarios_horarios.slice(0, 5)
             }));
             setHorariosList(formattedHorarios);
           } else {
@@ -154,12 +154,6 @@ export default function App() {
       return;
     }
 
-    const horario = horariosList.find(h => h.horarios_horarios === selectedHorario);
-    if (!horario) {
-      Alert.alert('Erro', 'Horário selecionado inválido.');
-      return;
-    }
-
     const consultaData = {
       ubs_id: parseInt(selectedUBS),
       paci_id: user.id,
@@ -167,8 +161,6 @@ export default function App() {
       horarios_dia: `${selectedData}`,
       horarios_horarios: `${selectedHorario}`
     };
-
-    console.log('Dados da consulta:', consultaData); // Adicionando log para inspecionar os dados
 
     try {
       const response = await fetch('http://192.168.137.1:3000/api/consultas/criar', {
@@ -183,7 +175,12 @@ export default function App() {
       if (data.error === '') {
         Alert.alert('Sucesso', 'Consulta agendada com sucesso.');
 
-        // Resetar todos os pickers após o sucesso
+        // Agendar a notificação 24 horas antes
+        scheduleNotification(selectedData, selectedHorario);
+
+        // Navega para a tela de destino após o agendamento bem-sucedido
+        navigation.navigate('consultas');
+
         setSelectedUBS('');
         setSelectedAtendimento('');
         setSelectedData('');
@@ -201,19 +198,46 @@ export default function App() {
     }
   };
 
+  const scheduleNotification = (data: string, horario: string) => {
+    const consultaData = new Date(`${data}T${horario}`);
+    const notificationDate = new Date(consultaData.getTime() - (24 * 60 * 60 * 1000));
+
+    Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Lembrete de Consulta',
+        body: 'Sua consulta está marcada para amanhã. Por favor, não se esqueça!',
+        data: { data, horario },
+      },
+      trigger: notificationDate,
+    });
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
+     
+      {/* Primeiro cabeçalho */}
       <View style={styles.header}>
         <Text style={styles.headerText}>UBS</Text>
         <Text style={styles.subHeaderText}>Unidade Básica de Saúde</Text>
       </View>
+
+      {/* Segundo cabeçalho */}
+      <View style={styles.secondHeader}>
+        <Text style={styles.smallText}>Você está em Home / Agendamento</Text>
+        <Text style={styles.largeText}>Agendar Consulta</Text>
+      </View>
+
       <Text style={styles.title}>Agendar</Text>
+
+      {/* Passos */}
       <View style={styles.steps}>
         <Ionicons name="desktop-outline" size={24} color="black" />
         <Ionicons name="create-outline" size={24} color="black" />
         <Ionicons name="checkmark-circle-outline" size={24} color="black" />
       </View>
+
+      {/* Escolha a unidade de saúde */}
       <Text style={styles.subtitle}>Escolha a unidade de saúde:</Text>
       <Picker
         selectedValue={selectedUBS}
@@ -225,6 +249,7 @@ export default function App() {
         ))}
       </Picker>
 
+      {/* Escolha o atendimento */}
       <Text style={styles.subtitle}>Escolha o atendimento:</Text>
       <Picker
         selectedValue={selectedAtendimento}
@@ -237,18 +262,20 @@ export default function App() {
         ))}
       </Picker>
 
+      {/* Escolha a data */}
       <Text style={styles.subtitle}>Escolha a data:</Text>
       <Picker
         selectedValue={selectedData}
         onValueChange={(itemValue) => setSelectedData(itemValue)}
         enabled={selectedAtendimento !== ''}
       >
-        <Picker.Item label="Selecione um dia" value="" />
-        {diasList.map((dia) => (
-          <Picker.Item key={dia.horarios_dia} label={formatDate(dia.horarios_dia)} value={dia.horarios_dia} />
+        <Picker.Item label="Selecione uma data" value="" />
+        {diasList.map((dia, index) => (
+          <Picker.Item key={index} label={formatDate(dia.horarios_dia)} value={dia.horarios_dia} />
         ))}
       </Picker>
 
+      {/* Escolha o horário */}
       <Text style={styles.subtitle}>Escolha o horário:</Text>
       <Picker
         selectedValue={selectedHorario}
@@ -256,13 +283,14 @@ export default function App() {
         enabled={selectedData !== ''}
       >
         <Picker.Item label="Selecione um horário" value="" />
-        {horariosList.map((horario) => (
-          <Picker.Item key={horario.horarios_horarios} label={horario.horarios_horarios} value={horario.horarios_horarios} />
+        {horariosList.map((horario, index) => (
+          <Picker.Item key={index} label={horario.horarios_horarios} value={horario.horarios_horarios} />
         ))}
       </Picker>
 
+      {/* Botão de agendamento */}
       <TouchableOpacity style={styles.button} onPress={agendarConsulta}>
-        <Text style={styles.buttonText}>Agendar Consulta</Text>
+        <Text style={styles.buttonText}>Agendar consulta</Text>
       </TouchableOpacity>
     </View>
   );
@@ -271,47 +299,78 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50,
-    paddingHorizontal: 20,
-    backgroundColor: '#fff',
+    padding: 20,
+  },
+  container2: {
+    flex: 1,
   },
   header: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'space-between',
+    backgroundColor: 'white',
+    padding: 30,
+    position: 'relative',
+    borderBottomWidth: 1,
+    borderBottomColor: 'black',
+  },
+  leftButton: {
+    padding: 10,
+  },
+  buttonImage: {
+    width: 30,
+    height: 30,
+    resizeMode: 'contain',
+    marginTop: 45,
+  },
+  centerImage: {
+    width: 200,
+    height: 50,
+    marginTop: 30,
+    left: '50%',
+    marginLeft: -50,
+    marginRight: 120,
+    marginBottom: 10,
+  },
+  secondHeader: {
+    backgroundColor: '#123CD3',
+    padding: 10,
+    width: '100%',
+    alignSelf: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: 'black',
   },
   headerText: {
-    fontSize: 24,
+    fontSize: 30,
     fontWeight: 'bold',
   },
   subHeaderText: {
     fontSize: 16,
-    color: '#888',
+    color: 'gray',
   },
   title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  steps: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 20,
-  },
-  subtitle: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 10,
   },
+  subtitle: {
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  steps: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
   button: {
-    backgroundColor: '#007BFF',
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 5,
     alignItems: 'center',
     marginTop: 20,
   },
   buttonText: {
-    color: '#fff',
+    color: 'white',
     fontSize: 18,
-    fontWeight: 'bold',
   },
 });
