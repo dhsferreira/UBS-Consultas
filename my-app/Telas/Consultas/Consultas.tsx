@@ -34,7 +34,7 @@ const Consultas = () => {
 
   const fetchConsultas = async (selectedDate?: string) => {
     try {
-      let url = `http://192.168.1.2:3000/api/Consulta/${paci_id}`;
+      let url = `http://192.168.0.102:3000/api/Consulta/${paci_id}`;
       if (selectedDate) {
         url += `?data=${selectedDate}`;
       }

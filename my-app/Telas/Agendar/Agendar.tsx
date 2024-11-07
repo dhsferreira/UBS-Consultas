@@ -4,6 +4,8 @@ import { Picker } from '@react-native-picker/picker';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useUser } from "../UserContext";
+import { useNavigation } from '@react-navigation/native';
+import * as Notifications from 'expo-notifications'; // Importa as notificações
 
 interface UBS {
   ubs_id: number;
@@ -30,6 +32,14 @@ const formatDate = (dateString: string) => {
   return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
 };
 
+Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+    }),
+  });
+
 export default function App() {
   const [selectedUBS, setSelectedUBS] = useState('');
   const [selectedAtendimento, setSelectedAtendimento] = useState('');
@@ -40,11 +50,12 @@ export default function App() {
   const [diasList, setDiasList] = useState<Dia[]>([]);
   const [horariosList, setHorariosList] = useState<Horario[]>([]);
   const { user } = useUser();
-
+  const navigation = useNavigation();
+  
   useEffect(() => {
     const fetchUBS = async () => {
       try {
-        const response = await fetch('http://192.168.1.2:3000/api/Ubs');
+        const response = await fetch('http://192.168.0.102:3000/api/Ubs');
         const data = await response.json();
         if (data.error === '') {
           setUbsList(data.result);
@@ -63,7 +74,7 @@ export default function App() {
     if (selectedUBS !== '') {
       const fetchAreas = async () => {
         try {
-          const response = await fetch(`http://192.168.1.2:3000/api/areas/${selectedUBS}`);
+          const response = await fetch(`http://192.168.0.102:3000/api/areas/${selectedUBS}`);
           const data = await response.json();
           if (data.error === '') {
             setAreasList(data.result);
@@ -97,7 +108,7 @@ export default function App() {
     if (selectedAtendimento !== '' && selectedUBS !== '') {
       const fetchDias = async () => {
         try {
-          const response = await fetch(`http://192.168.1.2:3000/api/ubs/${selectedUBS}/areas/${selectedAtendimento}/horarios`); 
+          const response = await fetch(`http://192.168.0.102:3000/api/ubs/${selectedUBS}/areas/${selectedAtendimento}/horarios`); 
           const data = await response.json(); 
           if (data.error === '') {
             setDiasList(data.result);
@@ -119,7 +130,7 @@ export default function App() {
     if (selectedData !== '' && selectedAtendimento !== '' && selectedUBS !== '') {
       const fetchHorarios = async () => {
         try {
-          const response = await fetch(`http://192.168.1.2:3000/api/horario/horario/${selectedUBS}/${selectedAtendimento}/${selectedData}`);  
+          const response = await fetch(`http://192.168.0.102:3000/api/horario/horario/${selectedUBS}/${selectedAtendimento}/${selectedData}`);  
           const data = await response.json();
           if (data.error === '') {
             const formattedHorarios = data.result.map((item: Horario) => ({
@@ -171,7 +182,7 @@ export default function App() {
     console.log('Dados da consulta:', consultaData); // Adicionando log para inspecionar os dados
 
     try {
-      const response = await fetch('http://192.168.1.2:3000/api/consultas/criar', {
+      const response = await fetch('http://192.168.0.102:3000/api/consultas/criar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -182,7 +193,10 @@ export default function App() {
       const data = await response.json();
       if (data.error === '') {
         Alert.alert('Sucesso', 'Consulta agendada com sucesso.');
+        scheduleNotification(selectedData, selectedHorario);
 
+                // Navega para a tela de destino após o agendamento bem-sucedido
+                navigation.navigate('Consultas');
         // Resetar todos os pickers após o sucesso
         setSelectedUBS('');
         setSelectedAtendimento('');
@@ -200,6 +214,23 @@ export default function App() {
       Alert.alert('Erro', 'Erro ao agendar a consulta.');
     }
   };
+
+  const scheduleNotification = (data: string, horario: string) => {
+        const consultaData = new Date(`${data}T${horario}`);
+        const notificationDate = new Date(consultaData.getTime() - (24 * 60 * 60 * 1000));
+
+    
+    
+        Notifications.scheduleNotificationAsync({
+          content: {
+            title: 'Lembrete de Consulta',
+            body: 'Sua consulta está marcada para amanhã. Por favor, não se esqueça!',
+            data: { data, horario },
+          },
+          trigger: notificationDate,
+        });
+      };
+    
 
   return (
     <View style={styles.container}>
