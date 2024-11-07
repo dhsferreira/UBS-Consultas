@@ -68,7 +68,7 @@ router.get('/paciente/:paci_id/exames', PacientesController.listarExamesPorPacie
 router.get('/paciente/:paci_id/receitas', PacientesController.ReceitasPorPaciente);//#
 router.get('/paciente/:paci_id/vacinas', PacientesController.listarVacinasPorPaciente);//#
 router.get('/BuscarNome/:paci_nome', PacientesController.buscarPacientePorNome);
-
+router.get('/Nome/:paci_id', PacientesController.PaciNomePorId);
 //----------------------------RECEPCIONISTA-----------------------------------//
 router.put('/recepcionista/:recep_id', RecepcionistaController.alterarDadosRecepcionista);//#
 router.get('/Consulta/ubs/:ubs_id', RecepcionistaController.TodasConsultasDeUmaUbs);//#
@@ -78,10 +78,9 @@ router.get('/consultas/ubs/:ubs_id/area/:area_nome/dia/:dia', RecepcionistaContr
 router.put('/consulta/:consul_id/estado', RecepcionistaController.alterarEstadoConsulta);
 router.post('/adicionarHorarioAreaMedica', RecepcionistaController.adicionarHorarioAreaMedica);
 router.get('/buscarHorariosNaoVinculados/:horarios_dia', RecepcionistaController.buscarHorariosNaoVinculados);
-
+router.get('/buscarDiasNaoVinculados', RecepcionistaController.buscarDiasNaoVinculados);
 //----------------------------MEDICO-----------------------------------//
 router.put('/medico/:medi_id', MedicoController.alterarDadosMedico);//#
-router.post('/criarReceita', MedicoController.criarReceita);
+router.post('/criarReceita', MedicoController.adicionarReceita);
 router.post('/criarExame', MedicoController.criarExame);
 module.exports = router;
-

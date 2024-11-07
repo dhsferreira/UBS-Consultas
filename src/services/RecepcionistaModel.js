@@ -12,16 +12,16 @@ module.exports = {
         return new Promise((aceito, recusado) => {
             const fieldsToUpdate = [];
             const valuesToUpdate = [];
-    
+
             Object.keys(dados).forEach(key => {
                 if (dados[key] !== undefined) {
                     fieldsToUpdate.push(`${key} = ?`);
                     valuesToUpdate.push(dados[key]);
                 }
             });
-    
+
             valuesToUpdate.push(recep_id);
-    
+
             // Atualizando no MySQL
             db.query(
                 `UPDATE recepcionista SET ${fieldsToUpdate.join(', ')} WHERE recep_id = ?`,
@@ -32,41 +32,42 @@ module.exports = {
                         recusado(error);
                         return;
                     }
-    
+
                     console.log('Dados da recepcionista alterados no MySQL com sucesso:', results);
-    
+
                     // Atualizando também no Supabase
                     const { data, error: supabaseError } = await supabase
                         .from('recepcionista')
                         .update(dados)
                         .eq('recep_id', recep_id);
-    
+
                     if (supabaseError) {
                         console.error('Erro ao atualizar dados da recepcionista no Supabase:', supabaseError);
                         recusado(supabaseError);
                         return;
                     }
-    
+
                     console.log('Dados da recepcionista alterados no Supabase com sucesso:', data);
                     aceito(results);
                 }
             );
         });
     },
-    
+
 
     TodasConsultasDeUmaUbs: (ubs_id, data) => {
         return new Promise((aceito, recusado) => {
             let query = `
-                SELECT 
-                    paciente.paci_nome, 
-                    paciente.paci_cpf, 
-                    ubs.ubs_nome, 
-                    areas_medicas.area_nome, 
-                    DATE_FORMAT(datas_horarios.horarios_dia, '%d/%m/%Y') AS horarios_dia, 
-                    DATE_FORMAT(datas_horarios.horarios_horarios, '%H:%i') AS horarios_horarios, 
+                SELECT
+                    consulta.consul_id,            -- Adicionado consul_id
+                    paciente.paci_nome,
+                    paciente.paci_cpf,
+                    ubs.ubs_nome,
+                    areas_medicas.area_nome,
+                    DATE_FORMAT(datas_horarios.horarios_dia, '%d/%m/%Y') AS horarios_dia,
+                    DATE_FORMAT(datas_horarios.horarios_horarios, '%H:%i') AS horarios_horarios,
                     consulta.consul_estado
-                FROM 
+                FROM
                     consulta
                 INNER JOIN paciente ON consulta.paci_id = paciente.paci_id
                 INNER JOIN ubs ON consulta.ubs_id = ubs.ubs_id
@@ -75,18 +76,19 @@ module.exports = {
                 WHERE
                     consulta.ubs_id = ?
             `;
-    
+
             if (data) {
                 query += ` AND DATE(datas_horarios.horarios_dia) = ?`;
             }
-    
+
             db.query(query, data ? [ubs_id, data] : [ubs_id], (error, results) => {
                 if (error) {
                     recusado({ error: 'Ocorreu um erro ao buscar as consultas.', details: error });
                     return;
                 }
-    
+
                 const consultas = results.map(consulta => ({
+                    consul_id: consulta.consul_id,     // Incluído consul_id no resultado
                     paci_nome: consulta.paci_nome,
                     paci_cpf: consulta.paci_cpf,
                     ubs_nome: consulta.ubs_nome,
@@ -95,23 +97,24 @@ module.exports = {
                     horarios_horarios: consulta.horarios_horarios, // Horário sem segundos
                     consul_estado: consulta.consul_estado
                 }));
-    
+
                 aceito(consultas);
             });
         });
     },
+
     TodasConsultasDeUmaUbsPorDia: (ubs_id, horarios_dia) => {
         return new Promise((aceito, recusado) => {
             let query = `
-                SELECT 
-                    paciente.paci_nome, 
-                    paciente.paci_cpf, 
-                    ubs.ubs_nome, 
-                    areas_medicas.area_nome, 
-                    DATE_FORMAT(datas_horarios.horarios_dia, '%d/%m/%Y') AS horarios_dia, 
-                    DATE_FORMAT(datas_horarios.horarios_horarios, '%H:%i') AS horarios_horarios, 
+                SELECT
+                    paciente.paci_nome,
+                    paciente.paci_cpf,
+                    ubs.ubs_nome,
+                    areas_medicas.area_nome,
+                    DATE_FORMAT(datas_horarios.horarios_dia, '%d/%m/%Y') AS horarios_dia,
+                    DATE_FORMAT(datas_horarios.horarios_horarios, '%H:%i') AS horarios_horarios,
                     consulta.consul_estado
-                FROM 
+                FROM
                     consulta
                 INNER JOIN paciente ON consulta.paci_id = paciente.paci_id
                 INNER JOIN ubs ON consulta.ubs_id = ubs.ubs_id
@@ -121,13 +124,13 @@ module.exports = {
                     consulta.ubs_id = ?
                     AND DATE(datas_horarios.horarios_dia) = ?
             `;
-    
+
             db.query(query, [ubs_id, horarios_dia], (error, results) => {
                 if (error) {
                     recusado({ error: 'Ocorreu um erro ao buscar as consultas.', details: error });
                     return;
                 }
-    
+
                 const consultas = results.map(consulta => ({
                     paci_nome: consulta.paci_nome,
                     paci_cpf: consulta.paci_cpf,
@@ -137,7 +140,7 @@ module.exports = {
                     horarios_horarios: consulta.horarios_horarios, // Horário sem segundos
                     consul_estado: consulta.consul_estado
                 }));
-    
+
                 aceito(consultas);
             });
         });
@@ -146,15 +149,15 @@ module.exports = {
     TodasConsultasDeUbsArea: (ubs_id, area_nome, data) => {
         return new Promise((aceito, recusado) => {
             let query = `
-                SELECT 
-                    paciente.paci_nome, 
-                    paciente.paci_cpf, 
-                    ubs.ubs_nome, 
-                    areas_medicas.area_nome, 
-                    DATE_FORMAT(datas_horarios.horarios_dia, '%d/%m/%Y') AS horarios_dia, 
-                    DATE_FORMAT(datas_horarios.horarios_horarios, '%H:%i') AS horarios_horarios, 
+                SELECT
+                    paciente.paci_nome,
+                    paciente.paci_cpf,
+                    ubs.ubs_nome,
+                    areas_medicas.area_nome,
+                    DATE_FORMAT(datas_horarios.horarios_dia, '%d/%m/%Y') AS horarios_dia,
+                    DATE_FORMAT(datas_horarios.horarios_horarios, '%H:%i') AS horarios_horarios,
                     consulta.consul_estado
-                FROM 
+                FROM
                     consulta
                 INNER JOIN paciente ON consulta.paci_id = paciente.paci_id
                 INNER JOIN ubs ON consulta.ubs_id = ubs.ubs_id
@@ -163,17 +166,17 @@ module.exports = {
                 WHERE
                     consulta.ubs_id = ? AND areas_medicas.area_nome = ?
             `;
-    
+
             if (data) {
                 query += ` AND DATE(datas_horarios.horarios_dia) = ?`;
             }
-    
+
             db.query(query, data ? [ubs_id, area_nome, data] : [ubs_id, area_nome], (error, results) => {
                 if (error) {
                     recusado({ error: 'Ocorreu um erro ao buscar as consultas.', details: error });
                     return;
                 }
-    
+
                 const consultas = results.map(consulta => ({
                     paci_nome: consulta.paci_nome,
                     paci_cpf: consulta.paci_cpf,
@@ -183,41 +186,41 @@ module.exports = {
                     horarios_horarios: consulta.horarios_horarios, // Horário sem segundos
                     consul_estado: consulta.consul_estado
                 }));
-    
+
                 aceito(consultas);
             });
         });
     },
-    
+
     TodasConsultasDeUbsAreaDia: (ubs_id, area_nome, dia) => {
         return new Promise((aceito, recusado) => {
             let query = `
-                SELECT 
-                    paciente.paci_nome, 
-                    paciente.paci_cpf, 
-                    ubs.ubs_nome, 
-                    areas_medicas.area_nome, 
-                    DATE_FORMAT(datas_horarios.horarios_dia, '%d/%m/%Y') AS horarios_dia, 
-                    DATE_FORMAT(datas_horarios.horarios_horarios, '%H:%i') AS horarios_horarios, 
+                SELECT
+                    paciente.paci_nome,
+                    paciente.paci_cpf,
+                    ubs.ubs_nome,
+                    areas_medicas.area_nome,
+                    DATE_FORMAT(datas_horarios.horarios_dia, '%d/%m/%Y') AS horarios_dia,
+                    DATE_FORMAT(datas_horarios.horarios_horarios, '%H:%i') AS horarios_horarios,
                     consulta.consul_estado
-                FROM 
+                FROM
                     consulta
                 INNER JOIN paciente ON consulta.paci_id = paciente.paci_id
                 INNER JOIN ubs ON consulta.ubs_id = ubs.ubs_id
                 INNER JOIN areas_medicas ON consulta.area_id = areas_medicas.area_id
                 INNER JOIN datas_horarios ON consulta.horarios_id = datas_horarios.horarios_id
                 WHERE
-                    consulta.ubs_id = ? 
+                    consulta.ubs_id = ?
                     AND areas_medicas.area_nome = ?
                     AND DATE(datas_horarios.horarios_dia) = ?
             `;
-    
+
             db.query(query, [ubs_id, area_nome, dia], (error, results) => {
                 if (error) {
                     recusado({ error: 'Ocorreu um erro ao buscar as consultas.', details: error });
                     return;
                 }
-    
+
                 const consultas = results.map(consulta => ({
                     paci_nome: consulta.paci_nome,
                     paci_cpf: consulta.paci_cpf,
@@ -227,12 +230,12 @@ module.exports = {
                     horarios_horarios: consulta.horarios_horarios, // Horário sem segundos
                     consul_estado: consulta.consul_estado
                 }));
-    
+
                 aceito(consultas);
             });
         });
     },
-    
+
 
     alterarEstadoConsulta: (consul_id, consul_estado) => {
         return new Promise((aceito, recusado) => {
@@ -245,14 +248,14 @@ module.exports = {
                         recusado(error);
                         return;
                     }
-                    
+
                     // Verifica quantas linhas foram afetadas pela alteração
                     if (results.affectedRows > 0) {
                         console.log('Estado da consulta alterado com sucesso:', results);
                     } else {
                         console.log('Nenhuma linha foi afetada (consulta não encontrada ou estado já alterado).');
                     }
-    
+
                     aceito(results);
                 }
             );
@@ -271,29 +274,35 @@ module.exports = {
                         recusado({ error: 'Erro ao buscar o ID da área.', details: error });
                         return;
                     }
-    
+
                     if (results.length === 0) {
                         console.error('Área não encontrada:', area_nome);
                         recusado({ error: 'Área não encontrada.' });
                         return;
                     }
-    
+
                     const area_id = results[0].area_id;
-    
-                    // Inserir novo horário na tabela datas_horarios
+
+                    // Buscar o horarios_id existente com base em horarios_dia e horarios_horarios
                     db.query(
-                        'INSERT INTO datas_horarios (horarios_dia, horarios_horarios, horarios_dispo) VALUES (?, ?, 1)', // Inicia como disponível (1)
+                        'SELECT horarios_id FROM datas_horarios WHERE horarios_dia = ? AND horarios_horarios = ? AND horarios_dispo = 1',
                         [horarios_dia, horarios_horarios],
                         (error, results) => {
                             if (error) {
-                                console.error('Erro ao adicionar o horário:', error);
-                                recusado({ error: 'Erro ao adicionar o horário.', details: error });
+                                console.error('Erro ao buscar o ID do horário:', error);
+                                recusado({ error: 'Erro ao buscar o ID do horário.', details: error });
                                 return;
                             }
-    
-                            const horarios_id = results.insertId;
-    
-                            // Associar o novo horário à área médica na tabela horarios_areas
+
+                            if (results.length === 0) {
+                                console.error('Horário não encontrado ou não disponível:', horarios_dia, horarios_horarios);
+                                recusado({ error: 'Horário não encontrado ou não disponível.' });
+                                return;
+                            }
+
+                            const horarios_id = results[0].horarios_id;
+
+                            // Associar o horário existente à área médica na tabela horarios_areas
                             db.query(
                                 'INSERT INTO horarios_areas (horarios_id, area_id) VALUES (?, ?)',
                                 [horarios_id, area_id],
@@ -303,8 +312,21 @@ module.exports = {
                                         recusado({ error: 'Erro ao associar horário à área médica.', details: error });
                                         return;
                                     }
-    
-                                    aceito({ message: 'Horário adicionado com sucesso!', horarios_id });
+
+                                    // Opcional: Atualizar horarios_dispo para 0 se desejado
+                                    db.query(
+                                        'UPDATE datas_horarios SET horarios_dispo = 1 WHERE horarios_id = ?',
+                                        [horarios_id],
+                                        (error) => {
+                                            if (error) {
+                                                console.error('Erro ao atualizar a disponibilidade do horário:', error);
+                                                recusado({ error: 'Erro ao atualizar a disponibilidade do horário.', details: error });
+                                                return;
+                                            }
+
+                                            aceito({ message: 'Horário associado à área médica com sucesso!', horarios_id });
+                                        }
+                                    );
                                 }
                             );
                         }
@@ -314,14 +336,15 @@ module.exports = {
         });
     },
 
+
+
     buscarHorariosNaoVinculados: async (horarios_dia) => {
         return new Promise((aceito, recusado) => {
             const query = `
-                SELECT dh.horarios_horarios
+                SELECT DISTINCT dh.horarios_horarios
                 FROM datas_horarios dh
-                LEFT JOIN horarios_areas ha ON dh.horarios_id = ha.horarios_id
-                WHERE dh.horarios_dia = ? 
-                AND ha.horarios_id IS NULL
+                WHERE dh.horarios_dia = ?
+                AND dh.horarios_dispo = 1
             `;
             db.query(query, [horarios_dia], (error, results) => {
                 if (error) {
@@ -329,14 +352,48 @@ module.exports = {
                     recusado({ error: 'Erro ao buscar os horários não vinculados.', details: error });
                     return;
                 }
+
+                console.log('Resultados da consulta:', results); // Log dos resultados da consulta
+
+                // Aceita apenas os horários disponíveis
                 aceito(results); // Retorna os horários encontrados
             });
         });
     },
 
-    
-    
-    
+
+
+
+    buscarDiasNaoVinculados: async () => {
+        return new Promise((aceito, recusado) => {
+            const query = `
+                SELECT DISTINCT dh.horarios_dia
+                FROM datas_horarios dh
+                LEFT JOIN horarios_areas ha ON dh.horarios_id = ha.horarios_id
+                WHERE ha.horarios_id IS NULL
+            `;
+            db.query(query, (error, results) => {
+                if (error) {
+                    console.error('Erro ao buscar os dias não vinculados:', error);
+                    recusado({ error: 'Erro ao buscar os dias não vinculados.', details: error });
+                    return;
+                }
+
+                // Formatar as datas para o formato "YYYY-MM-DD"
+                const diasFormatados = results.map(result => {
+                    const date = new Date(result.horarios_dia); // Supondo que 'horarios_dia' é a propriedade que contém a data
+                    return date.toISOString().slice(0, 10); // Formato: "YYYY-MM-DD"
+                });
+
+                aceito(diasFormatados); // Retorna as datas formatadas
+            });
+        });
+    },
+
+
+
+
+
 
 
 
@@ -392,14 +449,14 @@ module.exports = {
     },
     buscarTodos: () =>{        // -------------------------LISTAR TODOS--------------------------------- //
         return new Promise((aceito, recusado)=>{
-    
+
             db.query('SELECT * FROM recepcionista', (error, results)=>{
                 if(error) { recusado(error); return; }
                 aceito(results);
             });
         });
     },
-    
+
 
 // Model/*
 inserir: (recep_nome, recep_CPF, recep_cel, recep_email, recep_senha, ubs_id) => {
@@ -429,7 +486,7 @@ verificarLogin: (recep_CPF, recep_senha) => {
             recusado({ error: 'Erro ao verificar o login da recepcionista.', details: error });
             return;
           }
-  
+
           if (results.length > 0) {
             aceito(true); // Login bem-sucedido
           } else {
@@ -470,7 +527,7 @@ adicionarHorarioEArea: (horarios_dia, horarios_horarios, area_id) => {
                     recusado({ error: 'Erro ao adicionar horário.', details: error });
                     return;
                 }
-                
+
                 const horarios_id = results.insertId;
 
                 // Vincular horário à área
@@ -490,6 +547,6 @@ adicionarHorarioEArea: (horarios_dia, horarios_horarios, area_id) => {
     });
 },
 
-   
+
 
 }
