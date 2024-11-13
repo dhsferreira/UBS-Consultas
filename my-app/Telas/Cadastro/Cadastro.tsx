@@ -149,7 +149,7 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
                     customTextInputProps={{ mode: 'outlined' }}
                 />
                 <TextInput
-                    label="Email"
+                    label="E-mail"
                     value={email}
                     onChangeText={setEmail}
                     mode="outlined"

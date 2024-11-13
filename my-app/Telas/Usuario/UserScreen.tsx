@@ -6,6 +6,7 @@ import { supabase } from '../Supabase';
 import { useNavigation } from '@react-navigation/native'; 
 import * as ImagePicker from 'expo-image-picker';
 import Icon from 'react-native-vector-icons/Feather';
+import { TextInputMask } from 'react-native-masked-text';
 
 const UserTypeDisplay: React.FC = () => {
     const { user, setUser } = useUser();
@@ -111,11 +112,10 @@ const UserTypeDisplay: React.FC = () => {
                     recep_nome: userInfo.recep_nome,
                     recep_email: userInfo.recep_email,
                     recep_cel: userInfo.recep_cel,
-                    recep_cpf: userInfo.recep_cpf,
                     recep_senha: userInfo.recep_senha,
                 };
 
-                const response = await fetch(`http://192.168.0.106:3000/api/recepcionista/${user.id}`, {
+                const response = await fetch(`http://10.47.7.48:3000/api/recepcionista/${user.id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -134,34 +134,37 @@ const UserTypeDisplay: React.FC = () => {
                     paci_nome: userInfo.paci_nome,
                     paci_email: userInfo.paci_email,
                     paci_cel: userInfo.paci_cel,
-                    paci_cpf: userInfo.paci_cpf,
                     paci_senha: userInfo.paci_senha,
                 };
 
-                const response = await fetch(`http://192.168.0.106:3000/api/paciente/${user.id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(updatedData),
-                });
+               // Log dos parâmetros alterados
+            console.log('Alterações do Paciente:', updatedData);
 
-                if (response.ok) {
-                    const result = await response.json();
-                    console.log('Dados do paciente atualizados com sucesso:', result);
-                } else {
-                    console.error('Erro ao atualizar dados do paciente:', response.status);
-                }
+            const response = await fetch(`http://192.168.137.1:3000/api/paciente/${user.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(updatedData),
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('Dados do paciente atualizados com sucesso:', result);
+            } else {
+                const errorResponse = await response.text();  // Pega a resposta em texto
+                console.error('Erro ao atualizar dados do paciente:', response.status, errorResponse);
+            }
+                
             } else if (user.type === 'Medico') {
                 updatedData = {
                     medi_nome: userInfo.medi_nome,
                     medi_email: userInfo.medi_email,
                     medi_cel: userInfo.medi_cel,
-                    medi_cpf: userInfo.medi_cpf,
                     medi_senha: userInfo.medi_senha,
                 };
 
-                const response = await fetch(`http://192.168.0.106:3000/api/medico/${user.id}`, {
+                const response = await fetch(`http://192.168.137.1:3000/api/medico/${user.id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -239,24 +242,29 @@ const UserTypeDisplay: React.FC = () => {
                         style={[styles.userInputInfo, { opacity: isEditable ? 1 : 0.5 }]} 
                     />
 
-                    <Text style={styles.label}>Celular:</Text>
-                    <TextInput 
-                        editable={isEditable} 
-                        value={userInfo?.paci_cel || userInfo?.recep_cel || userInfo?.medi_cel || ''} 
-                        onChangeText={(text) => setUserInfo(prev => ({ ...prev, paci_cel: text, recep_cel: text, medi_cel: text }))} 
-                        style={[styles.userInputInfo, { opacity: isEditable ? 1 : 0.5 }]} 
+<Text style={styles.label}>Celular:</Text>
+                    <TextInputMask
+                        type={'cel-phone'}
+                        options={{
+                            maskType: 'BRL',
+                            withDDD: true,
+                            dddMask: '(99) ',
+                        }}
+                        value={userInfo?.paci_cel || userInfo?.recep_cel || userInfo?.medi_cel || ''}
+                        onChangeText={(text) => setUserInfo(prev => ({
+                            ...prev, 
+                            paci_cel: text, 
+                            recep_cel: text, 
+                            medi_cel: text,
+                        }))}
+                        editable={isEditable}
+                        style={[styles.userInputInfo, { opacity: isEditable ? 1 : 0.5 }]}
                     />
 
-                    <Text style={styles.label}>CPF:</Text>
-                    <TextInput 
-                        editable={isEditable} 
-                        value={userInfo?.paci_cpf || userInfo?.recep_cpf || userInfo?.medi_cpf || ''} 
-                        onChangeText={(text) => setUserInfo(prev => ({ ...prev, paci_cpf: text, recep_cpf: text, medi_cpf: text }))} 
-                        style={[styles.userInputInfo, { opacity: isEditable ? 1 : 0.5 }]} 
-                    />
+                  
 
                     {isEditable ? (
-                        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                        <TouchableOpacity style={styles.editButton} onPress={handleSave}>
                             <Text style={styles.buttonText}>Salvar</Text>
                         </TouchableOpacity>
                     ) : (
@@ -265,7 +273,7 @@ const UserTypeDisplay: React.FC = () => {
                         </TouchableOpacity>
                     )}
                     
-                    <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                    <TouchableOpacity style={styles.logOutButton} onPress={handleLogout}>
                         <Text style={styles.buttonText}>Logout</Text>
                     </TouchableOpacity>
                 </View>

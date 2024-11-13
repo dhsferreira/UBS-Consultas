@@ -55,7 +55,7 @@ export default function App() {
   useEffect(() => {
     const fetchUBS = async () => {
       try {
-        const response = await fetch('http://192.168.0.102:3000/api/Ubs');
+        const response = await fetch('http://10.47.7.48:3000/api/Ubs');
         const data = await response.json();
         if (data.error === '') {
           setUbsList(data.result);
@@ -74,7 +74,7 @@ export default function App() {
     if (selectedUBS !== '') {
       const fetchAreas = async () => {
         try {
-          const response = await fetch(`http://192.168.0.102:3000/api/areas/${selectedUBS}`);
+          const response = await fetch(`http://10.47.7.48:3000/api/areas/${selectedUBS}`);
           const data = await response.json();
           if (data.error === '') {
             setAreasList(data.result);
@@ -108,7 +108,7 @@ export default function App() {
     if (selectedAtendimento !== '' && selectedUBS !== '') {
       const fetchDias = async () => {
         try {
-          const response = await fetch(`http://192.168.0.102:3000/api/ubs/${selectedUBS}/areas/${selectedAtendimento}/horarios`); 
+          const response = await fetch(`http://10.47.7.48:3000/api/ubs/${selectedUBS}/areas/${selectedAtendimento}/horarios`); 
           const data = await response.json(); 
           if (data.error === '') {
             setDiasList(data.result);
@@ -128,29 +128,34 @@ export default function App() {
 
   useEffect(() => {
     if (selectedData !== '' && selectedAtendimento !== '' && selectedUBS !== '') {
+      console.log('Requisitando horários para UBS:', selectedUBS, 'atendimento:', selectedAtendimento, 'data:', selectedData);
       const fetchHorarios = async () => {
         try {
-          const response = await fetch(`http://192.168.0.102:3000/api/horario/horario/${selectedUBS}/${selectedAtendimento}/${selectedData}`);  
+          const response = await fetch(`http://10.47.7.48:3000/api/horario/${selectedUBS}/${selectedAtendimento}/${selectedData}`);
           const data = await response.json();
-          if (data.error === '') {
+          console.log('Resposta Horários:', data); // Logando a resposta da API
+  
+          // Alteração: Verificando se a resposta contém o campo "result"
+          if (data && data.result && data.result.length > 0) {
             const formattedHorarios = data.result.map((item: Horario) => ({
               ...item,
-              horarios_horarios: item.horarios_horarios.slice(0, 5)  // Remove os segundos
+              horarios_horarios: item.horarios_horarios.slice(0, 5) // Remove os segundos
             }));
             setHorariosList(formattedHorarios);
           } else {
-            console.error('Erro ao buscar os horários:', data.error);
+            console.error('Erro: Nenhum horário encontrado ou resposta inválida.', data);
           }
         } catch (error) {
           console.error('Erro ao buscar os horários:', error);
         }
       };
-
+  
       fetchHorarios();
     } else {
       setHorariosList([]);
     }
   }, [selectedData, selectedAtendimento, selectedUBS]);
+  
 
   const agendarConsulta = async () => {
     if (!selectedUBS || !selectedAtendimento || !selectedData || !selectedHorario) {
@@ -182,7 +187,7 @@ export default function App() {
     console.log('Dados da consulta:', consultaData); // Adicionando log para inspecionar os dados
 
     try {
-      const response = await fetch('http://192.168.0.102:3000/api/consultas/criar', {
+      const response = await fetch('http://10.47.7.48:3000/api/consultas/criar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

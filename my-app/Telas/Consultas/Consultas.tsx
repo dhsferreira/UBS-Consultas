@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'; 
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Image, TouchableOpacity, Text, ScrollView, ActivityIndicator, Modal, TouchableWithoutFeedback } from 'react-native';
 import { TextInputMask } from 'react-native-masked-text';
 import { useNavigation, DrawerActions, useFocusEffect } from '@react-navigation/native';
@@ -20,13 +20,16 @@ const Consultas = () => {
   const navigation = useNavigation();
   const { user } = useUser(); // Use o contexto do usuário
   const [date, setDate] = useState('');
-  const [consultas, setConsultas] = useState<Consulta[]>([]);
-  const [filteredConsultas, setFilteredConsultas] = useState<Consulta[]>([]);
+  const [consultas, setConsultas] = useState<Consulta[]>([]); // Inicializando como array vazio
+  const [filteredConsultas, setFilteredConsultas] = useState<Consulta[]>([]); // Inicializando como array vazio
   const [loading, setLoading] = useState(true);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const dateInputRef = useRef(null);
 
   const paci_id = user.id; // Utilize o id do usuário do contexto
+
+  // Log para verificar o ID do paciente
+  console.log("ID do paciente:", paci_id);
 
   const openDrawer = () => {
     navigation.dispatch(DrawerActions.openDrawer());
@@ -34,14 +37,23 @@ const Consultas = () => {
 
   const fetchConsultas = async (selectedDate?: string) => {
     try {
-      let url = `http://192.168.0.102:3000/api/Consulta/${paci_id}`;
+      // Log para verificar o ID do paciente
+      console.log("ID do paciente:", paci_id);
+
+      let url = `http://10.47.7.48:3000/api/Consulta/${paci_id}`;
       if (selectedDate) {
         url += `?data=${selectedDate}`;
       }
       const response = await axios.get(url);
-      const consultasData: Consulta[] = response.data.result;
+
+      console.log("Resposta da API:", response.data); // Log da resposta da API
+
+      // Acessando a estrutura correta para obter as consultas
+      const consultasData: Consulta[] = Array.isArray(response.data.result.result) ? response.data.result.result : [];
+      console.log("Consultas recebidas:", consultasData); // Verificando as consultas
+
       setConsultas(consultasData);
-      setFilteredConsultas(consultasData);
+      setFilteredConsultas(consultasData); // Garantindo que seja sempre um array
     } catch (error) {
       console.error('Erro ao buscar consultas:', error);
     } finally {
@@ -79,26 +91,30 @@ const Consultas = () => {
 
   const handleFilterOption = (status: string) => {
     closeFilterModal();
-    let filtered = [];
-    switch (status) {
-      case 'agendada':
-        filtered = consultas.filter(consulta => consulta.consul_estado === 'Em espera'); // Corrigido consul_estatos para consul_estado
-        break;
-      case 'realizada':
-        filtered = consultas.filter(consulta => consulta.consul_estado === 'Finalizada'); // Corrigido consul_estatos para consul_estado
-        break;
-      case 'cancelada':
-        filtered = consultas.filter(consulta => consulta.consul_estado === 'Cancelada'); // Corrigido consul_estatos para consul_estado
-        break;
-      case 'todas':
-        filtered = consultas;
-        break;
-      default:
-        filtered = consultas;
-        break;
+    if (consultas && consultas.length > 0) {
+      let filtered = [];
+      switch (status) {
+        case 'agendada':
+          filtered = consultas.filter(consulta => consulta.consul_estado === 'Em espera');
+          break;
+        case 'realizada':
+          filtered = consultas.filter(consulta => consulta.consul_estado === 'Finalizada');
+          break;
+        case 'cancelada':
+          filtered = consultas.filter(consulta => consulta.consul_estado === 'Cancelada');
+          break;
+        case 'todas':
+          filtered = consultas;
+          break;
+        default:
+          filtered = consultas;
+          break;
+      }
+      filtered.sort((a, b) => (a.consul_estado === 'Em andamento' ? -1 : 1));
+      setFilteredConsultas(filtered);
+    } else {
+      setFilteredConsultas([]);
     }
-    filtered.sort((a, b) => (a.consul_estado === 'Em andamento' ? -1 : 1)); // Corrigido consul_estatos para consul_estado
-    setFilteredConsultas(filtered);
   };
 
   const getCardStyle = (status: string) => {
@@ -177,7 +193,6 @@ const Consultas = () => {
         <TouchableWithoutFeedback onPress={closeFilterModal}>
           <View style={styles.modalBackground}>
             <View style={styles.modalContent}>
-              
               {/* Opções de filtro */}
               <TouchableOpacity style={styles.filterOption} onPress={() => handleFilterOption('todas')}>
                 <Text style={styles.filterOptionText}>Todas as Consultas</Text>

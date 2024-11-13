@@ -27,17 +27,28 @@ const ExamesScreen = ({ route }) => {
 
   const fetchConsultas = async () => {
     try {
-      const response = await axios.get(`http://192.168.1.2:3000/api/Consulta/${paciId}`);
-      setConsultas(response.data.result || []);
-      setFilteredConsultas(response.data.result || []);
+      console.log('Buscando consultas para paciId:', paciId); // Verifica o paciId antes de fazer a requisição
+      const response = await axios.get(`http://10.47.7.48:3000/api/Consulta/${paciId}`);
+      
+      // Log para inspecionar a estrutura completa da resposta
+    //  console.log('Resposta completa da API (Consultas):', JSON.stringify(response.data, null, 2));
+      
+      // Se a estrutura da resposta for diferente do esperado, faça os ajustes necessários
+      if (response.data.result && Array.isArray(response.data.result.result)) {
+        setConsultas(response.data.result.result); // Acessando o array correto
+        setFilteredConsultas(response.data.result.result); // Acessando o array correto
+      } else {
+        console.log('A estrutura de dados não é a esperada:', response.data);
+      }
     } catch (error) {
       console.error('Erro ao buscar consultas:', error);
     }
   };
+  
 
   const fetchExames = async () => {
     try {
-      const response = await axios.get(`http://192.168.1.2:3000/api/paciente/${paciId}/exames`);
+      const response = await axios.get(`http://10.47.7.48:3000/api/paciente/${paciId}/exames`);
       setExames(response.data.result || []);
       setFilteredExames(response.data.result || []);
     } catch (error) {
@@ -47,7 +58,7 @@ const ExamesScreen = ({ route }) => {
 
   const fetchReceitas = async () => {
     try {
-      const response = await axios.get(`http://192.168.1.2:3000/api/paciente/${paciId}/receitas`);
+      const response = await axios.get(`http://10.47.7.48:3000/api/paciente/${paciId}/receitas`);
       setReceitas(response.data.result || []);
       setFilteredReceitas(response.data.result || []);
     } catch (error) {

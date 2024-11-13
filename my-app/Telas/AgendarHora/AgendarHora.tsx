@@ -65,7 +65,7 @@ export default function App() {
     if (ubsPrecedencia) {
       const fetchUbsNome = async () => {
         try {
-          const response = await fetch(`http://192.168.0.102:3000/api/Ubs/${ubsPrecedencia}/nome`);
+          const response = await fetch(`http://10.47.7.48:3000/api/Ubs/${ubsPrecedencia}/nome`);
           const data = await response.json();
           if (data.error === '') {
             setUbsNome(data.result.ubs_nome);
@@ -85,7 +85,7 @@ export default function App() {
     if (ubsPrecedencia !== '') {
       const fetchAreas = async () => {
         try {
-          const response = await fetch(`http://192.168.0.102:3000/api/areas/${ubsPrecedencia}`);
+          const response = await fetch(`http://10.47.7.48:3000/api/areas/${ubsPrecedencia}`);
           const data = await response.json();
           if (data.error === '') {
             setAreasList(data.result);
@@ -108,7 +108,7 @@ export default function App() {
     if (selectedAtendimento !== '' && ubsPrecedencia !== '') {
       const fetchDias = async () => {
         try {
-          const response = await fetch(`http://192.168.0.102:3000/api/buscarDiasNaoVinculados`);
+          const response = await fetch(`http://10.47.7.48:3000/api/buscarDiasNaoVinculados`);
           const data = await response.json();
           console.log(data); // Adicione este console.log para verificar a estrutura do retorno
           
@@ -138,7 +138,7 @@ export default function App() {
       const fetchHorarios = async () => {
         try {
           console.log("Fetching data for:", selectedData);
-          const response = await fetch(`http://192.168.0.102:3000/api/horario/${ubsPrecedencia}/${selectedAtendimento}/${selectedData}`);
+          const response = await fetch(`http://10.47.7.48:3000/api/horario/${ubsPrecedencia}/${selectedAtendimento}/${selectedData}`);
           
           if (!response.ok) {
             console.error(`Erro: Status da resposta ${response.status}`);
@@ -176,7 +176,7 @@ export default function App() {
     if (selectedData !== '') {
       const fetchHorariosNaoVinculados = async () => {
         try {
-            const response = await fetch(`http://192.168.0.102:3000/api/buscarHorariosNaoVinculados/${selectedData}`);
+            const response = await fetch(`http://10.47.7.48:3000/api/buscarHorariosNaoVinculados/${selectedData}`);
             const data = await response.json();
             if (data.error === '') {
                 const uniqueHorarios = Array.from(new Set(data.result.map(horario => horario.horarios_horarios)));
@@ -276,7 +276,7 @@ export default function App() {
       console.log('horarios_horarios (horario):', selectedHorario); // horarios_horarios
 
       try {
-        const response = await fetch('http://192.168.0.102:3000/api/adicionarHorarioAreaMedica', {
+        const response = await fetch('http://10.47.7.48:3000/api/adicionarHorarioAreaMedica', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
