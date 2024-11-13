@@ -193,34 +193,37 @@ module.exports = {
   }
 },
 
-    buscarHorariosNaoVinculados: async (req, res) => {
-        let json = { error: '', result: [] };
-   
-        try {
-            // Extrai o dia dos parâmetros da URL
-            const { horarios_dia } = req.params;
-   
-            // Validação do parâmetro
-            if (!horarios_dia) {
-                json.error = 'Parâmetro obrigatório faltando: horarios_dia.';
-                res.status(400).json(json);
-                return;
-            }
-   
-            // Chama a função do modelo para buscar os horários não vinculados
-            const horariosNaoVinculados = await RecepcionistaModel.buscarHorariosNaoVinculados(horarios_dia);
-   
-            // Retorna o resultado
-            json.result = horariosNaoVinculados;
-            res.status(200).json(json);
-        } catch (error) {
-            json.error = 'Erro ao buscar os horários não vinculados.';
-            if (error.details) {
-                json.details = error.details;
-            }
-            res.status(500).json(json);
-        }
-    },
+  buscarHorariosNaoVinculados: async (req, res) => {
+    let json = { error: '', result: [] };
+
+    try {
+        // Extrai o dia dos parâmetros da URL
+        const { horarios_dia } = req.params;
+
+        // Verifica se o parâmetro foi fornecido
+        if (!horarios_dia) {
+            json.error = 'Parâmetro obrigatório faltando: horarios_dia.';
+            res.status(400).json(json);
+            return;
+        }
+
+        console.log('Dia recebido no controller:', horarios_dia);  // Adiciona log aqui para verificar o valor
+
+        // Chama a função do modelo para buscar os horários não vinculados
+        const horariosNaoVinculados = await RecepcionistaModel.buscarHorariosNaoVinculados(horarios_dia);
+
+        // Retorna o resultado
+        json.result = horariosNaoVinculados;
+        res.status(200).json(json);
+    } catch (error) {
+        json.error = 'Erro ao buscar os horários não vinculados.';
+        if (error.details) {
+            json.details = error.details;
+        }
+        res.status(500).json(json);
+    }
+},
+
 
     buscarDiasNaoVinculados: async (req, res) => {
     let json = { error: '', result: [] };

@@ -104,59 +104,75 @@ module.exports = {
     },
    
 
-  TodasConsultasDeUmPaci: (paci_id, data) => {
-  return new Promise((resolve, reject) => {
-      // Monta a query SQL para buscar informações das consultas, unindo com as tabelas relacionadas
-      let query = `
-          SELECT
-              paciente.paci_nome,
-              paciente.paci_CPF,
-              ubs.ubs_nome,
-              areas_medicas.area_nome,
-              DATE_FORMAT(datas_horarios.horarios_dia, '%d/%m/%Y') AS horarios_dia,
-              DATE_FORMAT(datas_horarios.horarios_horarios, '%H:%i') AS horarios_horarios,
-              consulta.consul_estado
-          FROM
-              consulta
-          INNER JOIN paciente ON consulta.paci_id = paciente.paci_id
-          INNER JOIN ubs ON consulta.ubs_id = ubs.ubs_id
-          INNER JOIN areas_medicas ON consulta.area_id = areas_medicas.area_id
-          INNER JOIN datas_horarios ON consulta.horarios_id = datas_horarios.horarios_id
-          WHERE
-              consulta.paci_id = ?
-      `;
+TodasConsultasDeUmPaci: async (paci_id, data) => {
+    try {
+        if (!paci_id) {
+            throw new Error('paci_id não fornecido.');
+        }
 
-      // Adiciona uma condição extra para filtrar por data, se especificada
-      const params = [paci_id];
-      if (data) {
-          query += ` AND DATE(datas_horarios.horarios_dia) = ?`;
-          params.push(data);
-      }
+        let query = `
+            SELECT
+                paciente.paci_nome,
+                paciente.paci_CPF,
+                ubs.ubs_nome,
+                areas_medicas.area_nome,
+                DATE_FORMAT(datas_horarios.horarios_dia, '%d/%m/%Y') AS horarios_dia,
+                DATE_FORMAT(datas_horarios.horarios_horarios, '%H:%i') AS horarios_horarios,
+                consulta.consul_estado
+            FROM
+                consulta
+            INNER JOIN paciente ON consulta.paci_id = paciente.paci_id
+            INNER JOIN ubs ON consulta.ubs_id = ubs.ubs_id
+            INNER JOIN areas_medicas ON consulta.area_id = areas_medicas.area_id
+            INNER JOIN datas_horarios ON consulta.horarios_id = datas_horarios.horarios_id
+            WHERE
+                consulta.paci_id = ?
+        `;
 
-      // Executa a consulta no banco de dados
-      db.query(query, params, (error, results) => {
-          if (error) {
-              // Caso ocorra um erro na execução, rejeita a promise com detalhes do erro
-              reject({ error: 'Ocorreu um erro ao buscar a consulta.', details: error });
-              return;
-          }
+        const params = [paci_id];
+        if (data) {
+            query += ` AND DATE(datas_horarios.horarios_dia) = ?`;
+            params.push(data);
+        }
 
-          // Mapeia os resultados e formata os dados
-          const consultas = results.map(consulta => ({
-              paci_nome: consulta.paci_nome,
-              paci_CPF: consulta.paci_CPF,
-              ubs_nome: consulta.ubs_nome,
-              area_nome: consulta.area_nome,
-              horarios_dia: consulta.horarios_dia, // Data formatada
-              horarios_horarios: consulta.horarios_horarios, // Horário sem segundos
-              consul_estado: consulta.consul_estado
-          }));
+        // Ordena as consultas pela data e hora mais próximas
+        query += ` ORDER BY datas_horarios.horarios_dia ASC, datas_horarios.horarios_horarios ASC`;
 
-          // Resolve a promise com a lista de consultas
-          resolve(consultas);
-      });
-  });
+        // Usando promise() para garantir que a consulta retorna uma Promise
+        const [results] = await db.promise().query(query, params);
+
+        if (!results || results.length === 0) {
+            throw new Error('Nenhuma consulta encontrada para o paciente.');
+        }
+
+        const consultas = results.map(consulta => ({
+            paci_nome: consulta.paci_nome,
+            paci_CPF: consulta.paci_CPF,
+            ubs_nome: consulta.ubs_nome,
+            area_nome: consulta.area_nome,
+            horarios_dia: consulta.horarios_dia,
+            horarios_horarios: consulta.horarios_horarios,
+            consul_estado: consulta.consul_estado
+        }));
+
+        return { result: consultas };
+
+    } catch (error) {
+        console.error('Erro ao buscar as consultas:', error);
+        
+        if (error.message.includes('paci_id não fornecido')) {
+            return { error: 'paci_id não foi fornecido.', result: {} };
+        } else if (error.message.includes('Nenhuma consulta encontrada')) {
+            return { error: 'Nenhuma consulta encontrada para o paciente.', result: {} };
+        } else {
+            return { error: `Erro ao buscar as consultas: ${error.message}`, result: {} };
+        }
+    }
 },
+
+
+
+  
     criarConsulta: async (paci_id, ubs_id, area_id, horarios_id, consul_estado) => {
         return new Promise((aceito, recusado) => {
             // Inicia uma transação para garantir que ambos os processos ocorram corretamente

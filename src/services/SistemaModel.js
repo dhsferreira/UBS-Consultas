@@ -28,7 +28,7 @@ module.exports = {
 
    buscarHorariosDiaPorUbsEAreaNome: (ubs_id, area_nome) => {
     return new Promise((aceito, recusado) => {
-      // Primeiro, buscar area_id com base no area_nome
+      // Primeiro, buscar o area_id com base no area_nome
       db.query(
         'SELECT area_id FROM areas_medicas WHERE area_nome = ?',
         [area_nome],
@@ -48,7 +48,7 @@ module.exports = {
           const area_id = results[0].area_id;
           console.log('Área ID encontrado:', area_id);
   
-          // Em seguida, buscar horarios_dia com base no ubs_id, area_id e verificar se horarios_dispo = 1
+          // Em seguida, buscar todos os horarios_dia disponíveis para o ubs_id e area_id, excluindo os horários já vinculados a consultas
           db.query(
             `SELECT DISTINCT datas_horarios.horarios_dia
              FROM datas_horarios
@@ -56,7 +56,12 @@ module.exports = {
              INNER JOIN tabela_ligacao_ubs ON horarios_areas.area_id = tabela_ligacao_ubs.area_id
              WHERE tabela_ligacao_ubs.ubs_id = ?
              AND horarios_areas.area_id = ?
-             AND datas_horarios.horarios_dispo = 1`, // Filtro para horários disponíveis
+             AND datas_horarios.horarios_dispo = 0
+             AND NOT EXISTS (
+               SELECT 1
+               FROM consulta
+               WHERE consulta.horarios_id = datas_horarios.horarios_id
+             )`, // Exclui horários já vinculados a consultas
             [ubs_id, area_id],
             (error, results) => {
               if (error) {
@@ -79,52 +84,78 @@ module.exports = {
     });
   },
   
+  
   buscarHorariosPorUbsAreaEDia: (ubs_id, area_nome, horarios_dia) => {
     return new Promise((aceito, recusado) => {
-        // Primeiro, buscar area_id com base no area_nome
-        db.query(
-            'SELECT area_id FROM areas_medicas WHERE area_nome = ?',
-            [area_nome],
+      console.log('--- Iniciando função buscarHorariosPorUbsAreaEDia ---');
+      console.log(`Parâmetros recebidos - UBS ID: ${ubs_id}, Área: ${area_nome}, Data: ${horarios_dia}`);
+  
+      if (!ubs_id || !area_nome || !horarios_dia) {
+        console.error('Erro: Parâmetros insuficientes fornecidos.');
+        recusado({ error: 'Parâmetros insuficientes fornecidos.', details: { ubs_id, area_nome, horarios_dia } });
+        return;
+      }
+  
+      // Primeiro, buscar o area_id com base no area_nome
+      db.query(
+        'SELECT area_id FROM areas_medicas WHERE area_nome = ?',
+        [area_nome],
+        (error, results) => {
+          if (error) {
+            console.error('Erro ao buscar o ID da área:', error);
+            recusado({ error: 'Erro ao buscar o ID da área.', details: error });
+            return;
+          }
+  
+          console.log('Resultados da busca de area_id:', results);
+          if (results.length === 0) {
+            console.error('Área não encontrada para o nome:', area_nome);
+            recusado({ error: 'Área não encontrada.', area_nome });
+            return;
+          }
+  
+          const area_id = results[0].area_id;
+          console.log(`ID da área encontrado: ${area_id}`);
+  
+          // Em seguida, buscar horários disponíveis para a UBS, área e data, excluindo os já vinculados a consultas
+          db.query(
+            `SELECT DISTINCT datas_horarios.horarios_horarios
+             FROM datas_horarios
+             INNER JOIN horarios_areas ON datas_horarios.horarios_id = horarios_areas.horarios_id
+             INNER JOIN tabela_ligacao_ubs ON horarios_areas.area_id = tabela_ligacao_ubs.area_id
+             WHERE tabela_ligacao_ubs.ubs_id = ?
+             AND horarios_areas.area_id = ?
+             AND datas_horarios.horarios_dia = ?
+             AND datas_horarios.horarios_dispo = 0
+             AND NOT EXISTS (
+               SELECT 1
+               FROM consulta
+               WHERE consulta.horarios_id = datas_horarios.horarios_id
+             )`, // Exclui horários já vinculados a consultas
+            [ubs_id, area_id, horarios_dia],
             (error, results) => {
-                if (error) {
-                    console.error('Erro ao buscar o ID da área:', error);
-                    recusado({ error: 'Erro ao buscar o ID da área.', details: error });
-                    return;
-                }
-
-                if (results.length === 0) {
-                    console.error('Área não encontrada para o nome:', area_nome);
-                    recusado({ error: 'Área não encontrada.' });
-                    return;
-                }
-
-                const area_id = results[0].area_id;
-
-                // Em seguida, buscar horários distintos com base nos critérios fornecidos
-                db.query(
-                    `SELECT DISTINCT datas_horarios.horarios_horarios
-                     FROM datas_horarios
-                     INNER JOIN horarios_areas ON datas_horarios.horarios_id = horarios_areas.horarios_id
-                     INNER JOIN tabela_ligacao_ubs ON horarios_areas.area_id = tabela_ligacao_ubs.area_id
-                     WHERE tabela_ligacao_ubs.ubs_id = ?
-                     AND horarios_areas.area_id = ?
-                     AND datas_horarios.horarios_dia = ?
-                     AND datas_horarios.horarios_dispo = 0`, // Filtro para horários disponíveis
-                    [ubs_id, area_id, horarios_dia],
-                    (error, results) => {
-                        if (error) {
-                            console.error('Erro ao buscar os horários:', error);
-                            recusado({ error: 'Erro ao buscar os horários.', details: error });
-                            return;
-                        }
-
-                        aceito(results); // Retorna os horários encontrados
-                    }
-                );
+              if (error) {
+                console.error('Erro ao buscar os horários:', error);
+                recusado({ error: 'Erro ao buscar os horários.', details: error });
+                return;
+              }
+  
+              console.log('Resultados da busca de horários:', results);
+              if (results.length === 0) {
+                console.log(`Nenhum horário encontrado para UBS ID: ${ubs_id}, Área ID: ${area_id}, Data: ${horarios_dia}`);
+                aceito([]); // Retorna array vazio caso nenhum horário seja encontrado
+              } else {
+                console.log(`Horários encontrados: ${results.map(r => r.horarios_horarios).join(', ')}`);
+                aceito(results); // Retorna os horários encontrados
+              }
             }
-        );
+          );
+        }
+      );
     });
-},
+  },
+  
+
 
  
 

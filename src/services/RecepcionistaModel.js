@@ -315,7 +315,7 @@ module.exports = {
 
                                     // Opcional: Atualizar horarios_dispo para 0 se desejado
                                     db.query(
-                                        'UPDATE datas_horarios SET horarios_dispo = 1 WHERE horarios_id = ?',
+                                        'UPDATE datas_horarios SET horarios_dispo = 0 WHERE horarios_id = ?',
                                         [horarios_id],
                                         (error) => {
                                             if (error) {
@@ -343,8 +343,10 @@ module.exports = {
             const query = `
                 SELECT DISTINCT dh.horarios_horarios
                 FROM datas_horarios dh
+                LEFT JOIN horarios_areas ha ON dh.horarios_id = ha.horarios_id
                 WHERE dh.horarios_dia = ?
                 AND dh.horarios_dispo = 1
+                AND ha.horarios_id IS NULL
             `;
             db.query(query, [horarios_dia], (error, results) => {
                 if (error) {
@@ -352,14 +354,16 @@ module.exports = {
                     recusado({ error: 'Erro ao buscar os horários não vinculados.', details: error });
                     return;
                 }
-
+    
                 console.log('Resultados da consulta:', results); // Log dos resultados da consulta
-
+    
                 // Aceita apenas os horários disponíveis
                 aceito(results); // Retorna os horários encontrados
             });
         });
     },
+    
+    
 
 
 
