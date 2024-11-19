@@ -141,7 +141,7 @@ const SignInScreen = ({ navigation }: SignInScreenProps) => {
                 <Button style={styles.textButton}>
                     Esqueceu sua senha?
                 </Button>
-                <Button style={styles.textButton} onPress={() => navigation.navigate('Cadastro')}>
+                <Button style={styles.textButton}  onPress={() => navigation.navigate('Cadastro', { userType: radioValue })}>
                     Não tem uma conta? Cadastrar-se
                 </Button>
                 <Button mode="contained" style={styles.button} onPress={handleSignIn}>

@@ -28,7 +28,7 @@ const ExamesScreen = ({ route }) => {
   const fetchConsultas = async () => {
     try {
       console.log('Buscando consultas para paciId:', paciId); // Verifica o paciId antes de fazer a requisição
-      const response = await axios.get(`http://10.47.7.48:3000/api/Consulta/${paciId}`);
+      const response = await axios.get(`http://192.168.0.103:3000/api/Consulta/${paciId}`);
       
       // Log para inspecionar a estrutura completa da resposta
     //  console.log('Resposta completa da API (Consultas):', JSON.stringify(response.data, null, 2));
@@ -48,7 +48,7 @@ const ExamesScreen = ({ route }) => {
 
   const fetchExames = async () => {
     try {
-      const response = await axios.get(`http://10.47.7.48:3000/api/paciente/${paciId}/exames`);
+      const response = await axios.get(`http://192.168.0.103:3000/api/paciente/${paciId}/exames`);
       setExames(response.data.result || []);
       setFilteredExames(response.data.result || []);
     } catch (error) {
@@ -58,7 +58,7 @@ const ExamesScreen = ({ route }) => {
 
   const fetchReceitas = async () => {
     try {
-      const response = await axios.get(`http://10.47.7.48:3000/api/paciente/${paciId}/receitas`);
+      const response = await axios.get(`http://192.168.0.103:3000/api/paciente/${paciId}/receitas`);
       setReceitas(response.data.result || []);
       setFilteredReceitas(response.data.result || []);
     } catch (error) {
@@ -96,28 +96,54 @@ const ExamesScreen = ({ route }) => {
     }
   }, [selectedMenu, paciId]);
 
-  const handleDateSubmit = () => {
-    const formattedDate = date.split('/').reverse().join('-'); 
+ const handleDateSubmit = () => {
+  const formattedDate = date.split('/').reverse().join('-'); // Formata a data para o padrão YYYY-MM-DD
+
+  // Filtrando de acordo com o menu selecionado
+  if (selectedMenu === 'Consultas') {
     const filtered = consultas.filter(consulta =>
-      consulta.horarios_dia.includes(formattedDate) 
+      consulta.horarios_dia.includes(formattedDate)
     );
     setFilteredConsultas(date ? filtered : consultas);
-  };
+  } else if (selectedMenu === 'Exames') {
+    const filtered = exames.filter(exame =>
+      exame.exame_dia.includes(formattedDate)
+    );
+    setFilteredExames(date ? filtered : exames);
+  } else if (selectedMenu === 'Receitas') {
+    const filtered = receitas.filter(receita =>
+      receita.data_emissao.includes(formattedDate)
+    );
+    setFilteredReceitas(date ? filtered : receitas);
+  }
+};
 
-  const openFilterModal = () => {
-    setFilterModalVisible(true);
-  };
+const openFilterModal = () => {
+  setFilterModalVisible(true);
+};
 
-  const closeFilterModal = () => {
-    setFilterModalVisible(false);
-  };
+const closeFilterModal = () => {
+  setFilterModalVisible(false);
+};
 
-  const handleFilterOption = (status) => {
-    setSelectedFilter(status);
+const handleFilterOption = (status) => {
+  setSelectedFilter(status);
+
+  // Filtrando de acordo com o menu selecionado
+  if (selectedMenu === 'Consultas') {
     const filtered = status === 'todas' ? consultas : consultas.filter(consulta => consulta.consul_estado === status);
     setFilteredConsultas(filtered);
-    closeFilterModal();
-  };
+  } else if (selectedMenu === 'Exames') {
+    const filtered = status === 'todas' ? exames : exames.filter(exame => exame.exame_estado === status);
+    setFilteredExames(filtered);
+  } else if (selectedMenu === 'Receitas') {
+    const filtered = status === 'todas' ? receitas : receitas.filter(receita => receita.receita_estado === status);
+    setFilteredReceitas(filtered);
+  }
+
+  closeFilterModal();
+};
+
 
   const renderProfile = () => (
     <View style={styles.profileContainer}>
@@ -277,26 +303,29 @@ const ExamesScreen = ({ route }) => {
         ))}
       </View>
 
-      {/* Campo de pesquisa e botão de filtro */}
-      {(selectedMenu === 'Consultas' || selectedMenu === 'Exames' || selectedMenu === 'Receitas') && (
-        <View style={styles.filterContainer}>
-          <TextInputMask
-            ref={dateInputRef}
-            type={'datetime'}
-            options={{ format: 'DD/MM/YYYY' }}
-            value={date}
-            onChangeText={text => setDate(text)}
-            style={styles.dateInput}
-            placeholder="Selecione a data"
-            placeholderTextColor="#000"
-            returnKeyType="done"
-            onSubmitEditing={handleDateSubmit}
-          />
-          <TouchableOpacity style={styles.filterButton} onPress={openFilterModal}>
-            <Text style={styles.filterButtonText}>Filtrar</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      {/* Campo de pesquisa */}
+{['Consultas', 'Exames', 'Receitas'].includes(selectedMenu) && (
+  <View style={styles.filterContainer}>
+    <TextInputMask
+      ref={dateInputRef}
+      type={'datetime'}
+      options={{ format: 'DD/MM/YYYY' }}
+      value={date}
+      onChangeText={text => setDate(text)}
+      style={styles.dateInput}
+      placeholder="Selecione a data"
+      placeholderTextColor="#000"
+      returnKeyType="done"
+      onSubmitEditing={handleDateSubmit}
+    />
+    {selectedMenu === 'Consultas' && (
+      <TouchableOpacity style={styles.filterButton} onPress={openFilterModal}>
+        <Text style={styles.filterButtonText}>Filtrar</Text>
+      </TouchableOpacity>
+    )}
+  </View>
+)}
+
 
       {/* Renderização do conteúdo com base no menu selecionado */}
       {selectedMenu === 'Perfil' && renderProfile()}

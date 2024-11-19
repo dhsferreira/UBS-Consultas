@@ -40,7 +40,7 @@ const Consultas = () => {
       // Log para verificar o ID do paciente
       console.log("ID do paciente:", paci_id);
 
-      let url = `http://10.47.7.48:3000/api/Consulta/${paci_id}`;
+      let url = `http://192.168.0.103:3000/api/Consulta/${paci_id}`;
       if (selectedDate) {
         url += `?data=${selectedDate}`;
       }

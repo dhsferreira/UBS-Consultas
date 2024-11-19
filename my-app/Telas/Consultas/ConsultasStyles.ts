@@ -28,7 +28,7 @@ export const styles = StyleSheet.create({
     width: 200,
     height: 50,
     marginTop: 30,
-    left: '50%',
+    left: '15%',
     marginLeft: -50,
     marginRight: 120,
     marginBottom: 10,
