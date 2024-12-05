@@ -65,7 +65,7 @@ export default function App() {
     if (ubsPrecedencia) {
       const fetchUbsNome = async () => {
         try {
-          const response = await fetch(`http://192.168.0.103:3000/api/Ubs/${ubsPrecedencia}/nome`);
+          const response = await fetch(`http://192.168.0.102:3000/api/Ubs/${ubsPrecedencia}/nome`);
           const data = await response.json();
           if (data.error === '') {
             setUbsNome(data.result.ubs_nome);
@@ -85,7 +85,7 @@ export default function App() {
     if (ubsPrecedencia !== '') {
       const fetchAreas = async () => {
         try {
-          const response = await fetch(`http://192.168.0.103:3000/api/areas/${ubsPrecedencia}`);
+          const response = await fetch(`http://192.168.0.102:3000/api/areas/${ubsPrecedencia}`);
           const data = await response.json();
           if (data.error === '') {
             setAreasList(data.result);
@@ -108,7 +108,7 @@ export default function App() {
     if (selectedAtendimento !== '' && ubsPrecedencia !== '') {
       const fetchDias = async () => {
         try {
-          const response = await fetch(`http://192.168.0.103:3000/api/buscarDiasNaoVinculados`);
+          const response = await fetch(`http://192.168.0.102:3000/api/buscarDiasNaoVinculados`);
           const data = await response.json();
           console.log(data); // Adicione este console.log para verificar a estrutura do retorno
           
@@ -138,7 +138,7 @@ export default function App() {
       const fetchHorarios = async () => {
         try {
           console.log("Fetching data for:", selectedData);
-          const response = await fetch(`http://192.168.0.103:3000/api/horario/${ubsPrecedencia}/${selectedAtendimento}/${selectedData}`);
+          const response = await fetch(`http://192.168.0.102:3000/api/horario/${ubsPrecedencia}/${selectedAtendimento}/${selectedData}`);
           
           if (!response.ok) {
             console.error(`Erro: Status da resposta ${response.status}`);
@@ -176,7 +176,7 @@ export default function App() {
     if (selectedData !== '') {
       const fetchHorariosNaoVinculados = async () => {
         try {
-            const response = await fetch(`http://192.168.0.103:3000/api/buscarHorariosNaoVinculados/${selectedData}`);
+            const response = await fetch(`http://192.168.0.102:3000/api/buscarHorariosNaoVinculados/${selectedData}`);
             const data = await response.json();
             if (data.error === '') {
                 const uniqueHorarios = Array.from(new Set(data.result.map(horario => horario.horarios_horarios)));
@@ -230,15 +230,23 @@ export default function App() {
 
         <Text style={styles.subtitle}>Escolha o dia:</Text>
         <Picker
-  selectedValue={selectedData} 
+  selectedValue={selectedData}
   onValueChange={(itemValue) => setSelectedData(itemValue)}
   enabled={selectedAtendimento !== ''}
 >
   <Picker.Item label="Selecione uma data" value="" />
-  {diasList.map((dia, index) => ( // 'dia' agora é uma string
-    <Picker.Item key={index} label={dia} value={dia} /> // Utilize 'dia' diretamente
-  ))}
+  {diasList.map((dia, index) => {
+    // Divide a data no formato original (YYYY-MM-DD)
+    const [year, month, day] = dia.split('-');
+    // Formata a data para DD/MM/YYYY
+    const formattedDate = `${day}/${month}/${year}`;
+
+    return (
+      <Picker.Item key={index} label={formattedDate} value={dia} />
+    );
+  })}
 </Picker>
+
 
 
         <Text style={styles.subtitle}>Horários Disponíveis:</Text>
@@ -252,16 +260,25 @@ export default function App() {
           )}
         />
 
-        <Picker
-          selectedValue={selectedHorario}
-          onValueChange={(itemValue) => setSelectedHorario(itemValue)}
-          enabled={selectedData !== ''}
-        >
-          <Picker.Item label="Adicionar um horário" value="" />
-          {horariosNaoVinculados.map((horario) => (
-            <Picker.Item key={horario.horarios_horarios} label={horario.horarios_horarios} value={horario.horarios_horarios} />
-          ))}
-        </Picker>
+<Picker
+  selectedValue={selectedHorario}
+  onValueChange={(itemValue) => setSelectedHorario(itemValue)}
+  enabled={selectedData !== ''}
+>
+  <Picker.Item label="Adicionar um horário" value="" />
+  {horariosNaoVinculados.map((horario) => {
+    // Formatar a hora para mostrar apenas horas e minutos
+    const formattedHorario = horario.horarios_horarios.split(':').slice(0, 2).join(':');
+    return (
+      <Picker.Item 
+        key={horario.horarios_horarios} 
+        label={formattedHorario} 
+        value={horario.horarios_horarios} 
+      />
+    );
+  })}
+</Picker>
+
 
         <TouchableOpacity
   style={styles.button}
@@ -276,7 +293,7 @@ export default function App() {
       console.log('horarios_horarios (horario):', selectedHorario); // horarios_horarios
 
       try {
-        const response = await fetch('http://192.168.0.103:3000/api/adicionarHorarioAreaMedica', {
+        const response = await fetch('http://192.168.0.102:3000/api/adicionarHorarioAreaMedica', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

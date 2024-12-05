@@ -1,145 +1,112 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Image, Text } from 'react-native';
-import { TextInput, Button, Snackbar, IconButton } from 'react-native-paper';
-import axios from 'axios';
+import { View, StyleSheet, Image, ScrollView, Text } from 'react-native';
+import { TextInput, Button, Snackbar } from 'react-native-paper';
+
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../Cadastro/types/User.type';
-import { supabase } from '../Supabase'; // Ajuste o caminho conforme necessário
-import { useRoute } from '@react-navigation/native';
+import supabase from '../Supabase'; // Certifique-se de que o caminho está correto
+import { useUser } from '../UserContext'; // Importar o hook do contexto
+import { TextInputMask } from 'react-native-masked-text'; // Importando a máscara
 
 type SignUpScreenProps = NativeStackScreenProps<RootStackParamList, 'Cadastro'>;
 
-const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
-    const route = useRoute();
-    const { userType } = route.params;
-
-    const [name, setName] = useState('');
-    const [birthdate, setBirthdate] = useState('');
-    const [cpf, setCpf] = useState('');
-    const [phone, setPhone] = useState('');
+const SignUpScreen = ({ navigation, route }: SignUpScreenProps) => {
+    const { userType } = route.params; // Tipo de usuário (Paciente, Recepcionista, Médico)
     const [email, setEmail] = useState('');
-    const [address, setAddress] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [passwordVisible, setPasswordVisible] = useState(false);
     const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
+    const [name, setName] = useState('');
+    const [cpf, setCpf] = useState('');
+    const [phone, setPhone] = useState('');
+    const [birthdate, setBirthdate] = useState('');
+    const [address, setAddress] = useState('');
     const [crm, setCrm] = useState('');
     const [specialization, setSpecialization] = useState('');
     const [area, setArea] = useState('');
     const [snackbarVisible, setSnackbarVisible] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
-
-    const formatDateToAmerican = (date: string) => {
-        const [day, month, year] = date.split('/');
-        return `${year}-${month}-${day}`;
-    };
+    const { setUser } = useUser(); // Usar o hook do contexto
 
     const handleSignUp = async () => {
-        if (name && cpf && phone && email && password && password === confirmPassword) {
-            let userData = {};
-            let apiUrl = '';
-            
-            if (userType === 'Paciente') {
-                userData = {
-                    paci_nome: name.trim(),
-                    paci_data_nascimento: formatDateToAmerican(birthdate.trim()),
-                    paci_CPF: cpf.trim().replace(/\D/g, ''),
-                    paci_cel: phone.trim().replace(/\D/g, ''),
-                    paci_email: email.trim(),
-                    paci_endereco: address.trim(),
-                    paci_senha: password.trim()
-                };
-                apiUrl = 'http://192.168.0.103:3000/api/paciente';
-            } else if (userType === 'Recepcionista') {
-                userData = {
-                    recep_nome: name.trim(),
-                    recep_CPF: cpf.trim().replace(/\D/g, ''),
-                    recep_cel: phone.trim().replace(/\D/g, ''),
-                    recep_email: email.trim(),
-                    recep_senha: password.trim(),
-                    ubs_id: 1 // Ajuste conforme a lógica de UBS
-                };
-                apiUrl = 'http://192.168.0.103:3000/api/recepcionista';
-            } else if (userType === 'Médico') {
-                userData = {
-                    medi_nome: name.trim(),
-                    medi_CPF: cpf.trim().replace(/\D/g, ''),
-                    medi_cel: phone.trim().replace(/\D/g, ''),
-                    medi_email: email.trim(),
-                    medi_senha: password.trim(),
-                    medi_especializa: specialization.trim(),
-                    medi_CRM: crm.trim(),
-                    medi_area: area.trim(),
-                    ubs_id: 1 // Ajuste conforme a lógica de UBS
-                };
-                apiUrl = 'http://192.168.0.103:3000/api/medico';
-            }
-    
-            try {
-                console.log("Tentando cadastrar usuário no Supabase...");
-                const { user, session, error: signUpError } = await supabase.auth.signUp({
-                    email: email.trim(),
-                    password: password.trim(),
-                });
-    
-                if (signUpError) {
-                    console.log("Erro ao cadastrar no Supabase Auth:", signUpError.message);
-                    setSnackbarMessage('Erro ao cadastrar usuário no Supabase.');
-                    setSnackbarVisible(true);
-                    return;
-                } else {
-                    console.log("Cadastro no Supabase Auth bem-sucedido. Usuário ID:", user?.id);
-                }
-    
-                console.log("Enviando dados para a API:", apiUrl);
-                console.log("Dados do usuário:", userData);
-                const apiResponse = await axios.post(apiUrl, userData);
-                console.log("Resposta da API:", apiResponse.data);
-    
-                if (!apiResponse.data.error) {
-                    const supabaseTable = userType.toLowerCase();
-                    console.log(`Inserindo dados na tabela ${supabaseTable} do Supabase...`);
-                    const { data: supabaseResponse, error: supabaseError } = await supabase
-                        .from(supabaseTable)
-                        .insert([userData]);
-    
-                    if (supabaseError) {
-                        console.log("Erro ao inserir dados no Supabase:", supabaseError.message);
-                        setSnackbarMessage(`Erro ao cadastrar ${userType.toLowerCase()} no Supabase.`);
-                    } else {
-                        console.log("Dados inseridos no Supabase com sucesso:", supabaseResponse);
-                        setSnackbarMessage(`${userType} cadastrado com sucesso!`);
-                        
-                        // Limpar os campos
-                        setName('');
-                        setBirthdate('');
-                        setCpf('');
-                        setPhone('');
-                        setEmail('');
-                        setAddress('');
-                        setPassword('');
-                        setConfirmPassword('');
-                        setCrm('');
-                        setSpecialization('');
-                        setArea('');
-    
-                        setTimeout(() => {
-                            setSnackbarVisible(false);
-                            navigation.navigate('Login');
-                        }, 1500);
-                    }
-                } else {
-                    console.log(`Erro ao cadastrar ${userType.toLowerCase()} via API externa.`);
-                    setSnackbarMessage(`Erro ao cadastrar ${userType.toLowerCase()}.`);
-                }
-            } catch (error) {
-                console.log("Erro ao conectar com a API:", error);
-                setSnackbarMessage('Erro ao conectar com a API.');
-            } finally {
+        if (password !== confirmPassword) {
+            setSnackbarMessage('As senhas não coincidem.');
+            setSnackbarVisible(true);
+            return;
+        }
+
+        try {
+            // Realizar login com o e-mail e senha fornecidos
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: email.trim(),
+                password: password.trim(),
+            });
+
+            if (error) {
+                console.error('Erro ao cadastrar:', error.message);
+                setSnackbarMessage('Erro ao autenticar. Tente novamente.');
                 setSnackbarVisible(true);
+            } else {
+                // Fazer a busca do tipo de usuário (Paciente, Recepcionista, Médico)
+                let userId;
+                if (userType === 'Recepcionista') {
+                    const { data: recepcionistaData, error: recepcionistaError } = await supabase
+                        .from('recepcionista')
+                        .select('recep_id')
+                        .eq('recep_email', email.trim());
+
+                    if (recepcionistaError || !recepcionistaData?.length) {
+                        throw new Error('E-mail não corresponde a um recepcionista.');
+                    }
+                    userId = recepcionistaData[0].recep_id;
+                } else if (userType === 'Paciente') {
+                    const { data: pacienteData, error: pacienteError } = await supabase
+                        .from('paciente')
+                        .select('paci_id')
+                        .eq('paci_email', email.trim());
+
+                    if (pacienteError || !pacienteData?.length) {
+                        throw new Error('E-mail não corresponde a um paciente.');
+                    }
+                    userId = pacienteData[0].paci_id;
+                } else if (userType === 'Medico') {
+                    const { data: medicoData, error: medicoError } = await supabase
+                        .from('medico')
+                        .select('medi_id')
+                        .eq('medi_email', email.trim());
+
+                    if (medicoError || !medicoData?.length) {
+                        throw new Error('E-mail não corresponde a um médico.');
+                    }
+                    userId = medicoData[0].medi_id;
+                }
+
+                // Atualizar o contexto com o ID e tipo do usuário
+                setUser({ id: userId, type: userType });
+
+                // Limpar campos não usados para login
+                setName('');
+                setCpf('');
+                setPhone('');
+                setBirthdate('');
+                setAddress('');
+                setCrm('');
+                setSpecialization('');
+                setArea('');
+
+                setSnackbarMessage('Cadastro bem-sucedido!');
+                setSnackbarVisible(true);
+
+                // Redirecionar para a tela de consultas ou outra tela após login
+                setTimeout(() => {
+                    setSnackbarVisible(false);
+                    navigation.navigate('Minhas Consultas'); // Ajuste conforme necessário
+                }, 1500);
             }
-        } else {
-            setSnackbarMessage('Por favor, preencha todos os campos corretamente.');
+        } catch (error) {
+            console.error('Erro ao conectar com a autenticação:', error);
+            setSnackbarMessage('Erro ao conectar com a autenticação.');
             setSnackbarVisible(true);
         }
     };
@@ -154,7 +121,9 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
             </View>
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <Text style={styles.headerText}>Cadastre-se</Text>
-                <Text style={styles.userTypeText}>Tipo de usuário selecionado: {userType}</Text>
+                <Text style={styles.userTypeText}>Preencha todos os campos para concluir o cadastro</Text>
+
+                {/* Campos adicionais */}
                 <TextInput
                     label="Nome"
                     value={name}
@@ -163,29 +132,50 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
                     style={styles.input}
                 />
                 {userType === 'Paciente' && (
-                    <TextInput
-                        label="Data de Nascimento"
+                    <TextInputMask
+                        type={'datetime'}
+                        options={{
+                            format: 'DD/MM/YYYY'
+                        }}
                         value={birthdate}
                         onChangeText={setBirthdate}
-                        mode="outlined"
-                        style={styles.input}
+                        keyboardType="numeric"
+                        customTextInput={TextInput}
+                        customTextInputProps={{
+                            label: 'Data de Nascimento',
+                            mode: 'outlined',
+                            style: styles.input,
+                        }}
                     />
                 )}
-                <TextInput
-                    label="CPF"
+                <TextInputMask
+                    type={'cpf'}
                     value={cpf}
                     onChangeText={setCpf}
-                    mode="outlined"
-                    style={styles.input}
                     keyboardType="numeric"
+                    customTextInput={TextInput}
+                    customTextInputProps={{
+                        label: 'CPF',
+                        mode: 'outlined',
+                        style: styles.input,
+                    }}
                 />
-                <TextInput
-                    label="Telefone"
+                <TextInputMask
+                    type={'cel-phone'}
+                    options={{
+                        maskType: 'BRL',
+                        withDDD: true,
+                        dddMask: '(99)',
+                    }}
                     value={phone}
                     onChangeText={setPhone}
-                    mode="outlined"
-                    style={styles.input}
                     keyboardType="numeric"
+                    customTextInput={TextInput}
+                    customTextInputProps={{
+                        label: 'Telefone',
+                        mode: 'outlined',
+                        style: styles.input,
+                    }}
                 />
                 <TextInput
                     label="E-mail"
@@ -195,6 +185,8 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
                     style={styles.input}
                     keyboardType="email-address"
                 />
+                
+
                 {userType === 'Paciente' && (
                     <TextInput
                         label="Endereço"
@@ -247,19 +239,21 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
                     secureTextEntry={!confirmPasswordVisible}
                     right={<TextInput.Icon icon={confirmPasswordVisible ? 'eye-off' : 'eye'} onPress={() => setConfirmPasswordVisible(!confirmPasswordVisible)} />}
                 />
+
                 <Button mode="contained" onPress={handleSignUp} style={styles.button}>
                     Cadastrar
                 </Button>
                 <Button
-    mode="text"
-    onPress={() => navigation.navigate('Login')}
-    style={styles.footerButton}
-    labelStyle={styles.footerButtonText}
->
-    Já tem conta? Fazer login
-</Button>
-
+                    mode="text"
+                    onPress={() => navigation.navigate('Login')}
+                    style={styles.footerButton}
+                    labelStyle={styles.footerButtonText}
+                >
+                    Já tem conta? Fazer login
+                </Button>
             </ScrollView>
+
+            {/* Exibição do Snackbar com mensagem */}
             <Snackbar
                 visible={snackbarVisible}
                 onDismiss={() => setSnackbarVisible(false)}
@@ -278,14 +272,14 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 16,
-        backgroundColor: '#FFFFFF', // Fundo branco
+        backgroundColor: '#FFFFFF',
     },
     header: {
         alignItems: 'center',
         marginBottom: 16,
     },
     centerImage: {
-        width: 180, // Ajustar o tamanho do logo
+        width: 180,
         height: 80,
         resizeMode: 'contain',
     },
@@ -308,29 +302,22 @@ const styles = StyleSheet.create({
     },
     input: {
         marginBottom: 12,
-        backgroundColor: '#F9F9F9', // Fundo claro para os inputs
-        borderRadius: 8, // Bordas arredondadas
+        backgroundColor: '#F9F9F9',
+        borderRadius: 8,
     },
     button: {
         marginTop: 16,
         paddingVertical: 12,
         borderRadius: 8,
-        backgroundColor: '#0056FF', // Cor azul
+        backgroundColor: '#0056FF',
     },
-    buttonText: {
-        fontSize: 16,
-        color: '#FFFFFF',
+    footerButton: {
+        marginTop: 8,
         textAlign: 'center',
-        fontWeight: '600',
     },
-    footerText: {
-        textAlign: 'center',
-        marginTop: 16,
-        fontSize: 14,
-        color: '#0056FF', // Azul para o link
-        textDecorationLine: 'underline',
+    footerButtonText: {
+        color: '#0056FF',
     },
 });
-
 
 export default SignUpScreen;

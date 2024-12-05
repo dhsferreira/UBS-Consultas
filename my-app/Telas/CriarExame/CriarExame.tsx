@@ -29,7 +29,7 @@ const Consultas = ({ route }) => {
   useEffect(() => {
     const fetchPaciNome = async () => {
       try {
-        const response = await axios.get(`http://192.168.0.103:3000/api/Nome/${paciId}`);
+        const response = await axios.get(`http://10.47.0.224:3000/api/Nome/${paciId}`);
         setPaciNome(response.data.paci_nome);
       } catch (error) {
         console.error('Erro ao buscar o nome do paciente:', error);
@@ -75,7 +75,7 @@ const Consultas = ({ route }) => {
 
   const fetchUbsNome = async (ubsId) => {
     try {
-      const response = await axios.get(`http://192.168.0.103:3000/api/Ubs/${ubsId}/nome`);
+      const response = await axios.get(`http://10.47.0.224:3000/api/Ubs/${ubsId}/nome`);
       console.log('Resposta da API de UBS:', response.data);
       setUbsNome(response.data.result.ubs_nome);
     } catch (error) {
@@ -89,7 +89,7 @@ const Consultas = ({ route }) => {
 
   const adicionarReceita = async () => {
     try {
-      const response = await axios.post('http://192.168.0.103:3000/api/criarReceita', {
+      const response = await axios.post('http://10.47.0.224:3000/api/criarReceita', {
         ubs_id: ubsId,
         medi_id: mediId,
         paci_id: paciId,

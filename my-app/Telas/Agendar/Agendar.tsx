@@ -55,7 +55,7 @@ export default function App() {
   useEffect(() => {
     const fetchUBS = async () => {
       try {
-        const response = await fetch('http://192.168.0.103:3000/api/Ubs');
+        const response = await fetch('http://192.168.0.102:3000/api/Ubs');
         const data = await response.json();
         if (data.error === '') {
           setUbsList(data.result);
@@ -74,7 +74,7 @@ export default function App() {
     if (selectedUBS !== '') {
       const fetchAreas = async () => {
         try {
-          const response = await fetch(`http://192.168.0.103:3000/api/areas/${selectedUBS}`);
+          const response = await fetch(`http://192.168.0.102:3000/api/areas/${selectedUBS}`);
           const data = await response.json();
           if (data.error === '') {
             setAreasList(data.result);
@@ -108,7 +108,7 @@ export default function App() {
     if (selectedAtendimento !== '' && selectedUBS !== '') {
       const fetchDias = async () => {
         try {
-          const response = await fetch(`http://192.168.0.103:3000/api/ubs/${selectedUBS}/areas/${selectedAtendimento}/horarios`); 
+          const response = await fetch(`http://192.168.0.102:3000/api/ubs/${selectedUBS}/areas/${selectedAtendimento}/horarios`); 
           const data = await response.json(); 
           if (data.error === '') {
             setDiasList(data.result);
@@ -131,7 +131,7 @@ export default function App() {
       console.log('Requisitando horários para UBS:', selectedUBS, 'atendimento:', selectedAtendimento, 'data:', selectedData);
       const fetchHorarios = async () => {
         try {
-          const response = await fetch(`http://192.168.0.103:3000/api/horario/${selectedUBS}/${selectedAtendimento}/${selectedData}`);
+          const response = await fetch(`http://192.168.0.102:3000/api/horarios/${selectedUBS}/${selectedAtendimento}/${selectedData}`);
           const data = await response.json();
           console.log('Resposta Horários:', data); // Logando a resposta da API
   
@@ -187,7 +187,7 @@ export default function App() {
     console.log('Dados da consulta:', consultaData); // Adicionando log para inspecionar os dados
 
     try {
-      const response = await fetch('http://192.168.0.103:3000/api/consultas/criar', {
+      const response = await fetch('http://192.168.0.102:3000/api/consultas/criar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -287,15 +287,30 @@ export default function App() {
 
       <Text style={styles.subtitle}>Escolha o horário:</Text>
       <Picker
-        selectedValue={selectedHorario}
-        onValueChange={(itemValue) => setSelectedHorario(itemValue)}
-        enabled={selectedData !== ''}
-      >
-        <Picker.Item label="Selecione um horário" value="" />
-        {horariosList.map((horario) => (
-          <Picker.Item key={horario.horarios_horarios} label={horario.horarios_horarios} value={horario.horarios_horarios} />
-        ))}
-      </Picker>
+  selectedValue={selectedHorario}
+  onValueChange={(itemValue) => setSelectedHorario(itemValue)}
+  enabled={selectedData !== ''}
+>
+  {/* Exibe a opção "Selecione um horário" */}
+  <Picker.Item label="Selecione um horário" value="" />
+  
+  {/* Cria todos os horários possíveis */}
+  {['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'].map((hora) => {
+    const isAvailable = horariosList.some(h => h.horarios_horarios === hora); // Verifica se o horário está disponível
+    return (
+      <Picker.Item
+        key={hora}
+        label={hora}
+        value={hora}
+        style={{
+          color: isAvailable ? 'black' : 'gray', // Aplica cinza se não for um horário disponível
+        }}
+        enabled={isAvailable} // Torna o item clicável somente se estiver disponível
+      />
+    );
+  })}
+</Picker>
+
 
       <TouchableOpacity style={styles.button} onPress={agendarConsulta}>
         <Text style={styles.buttonText}>Agendar Consulta</Text>

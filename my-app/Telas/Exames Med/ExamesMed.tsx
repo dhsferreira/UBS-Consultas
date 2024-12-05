@@ -28,7 +28,7 @@ const ExamesScreen = ({ route }) => {
   const fetchConsultas = async () => {
     try {
       console.log('Buscando consultas para paciId:', paciId); // Verifica o paciId antes de fazer a requisição
-      const response = await axios.get(`http://192.168.0.103:3000/api/Consulta/${paciId}`);
+      const response = await axios.get(`http://10.47.0.224:3000/api/Consulta/${paciId}`);
       
       // Log para inspecionar a estrutura completa da resposta
     //  console.log('Resposta completa da API (Consultas):', JSON.stringify(response.data, null, 2));
@@ -48,7 +48,7 @@ const ExamesScreen = ({ route }) => {
 
   const fetchExames = async () => {
     try {
-      const response = await axios.get(`http://192.168.0.103:3000/api/paciente/${paciId}/exames`);
+      const response = await axios.get(`http://10.47.0.224:3000/api/paciente/${paciId}/exames`);
       setExames(response.data.result || []);
       setFilteredExames(response.data.result || []);
     } catch (error) {
@@ -58,7 +58,7 @@ const ExamesScreen = ({ route }) => {
 
   const fetchReceitas = async () => {
     try {
-      const response = await axios.get(`http://192.168.0.103:3000/api/paciente/${paciId}/receitas`);
+      const response = await axios.get(`http://10.47.0.224:3000/api/paciente/${paciId}/receitas`);
       setReceitas(response.data.result || []);
       setFilteredReceitas(response.data.result || []);
     } catch (error) {

@@ -68,7 +68,7 @@ const Consultas = () => {
   
         const areaNome = medicoData.medi_area; // Obtenha o area_nome
   
-        let url = `http://192.168.0.103:3000/api/consultas/ubs/${ubsId}/area/${areaNome}`;
+        let url = `http://10.47.0.224:3000/api/consultas/ubs/${ubsId}/area/${areaNome}`;
         if (selectedDate) {
           url += `?data=${selectedDate}`;
         }
@@ -157,7 +157,7 @@ const Consultas = () => {
   const handleExames = async (consulta: Consulta) => {
     try {
       // Realiza a requisição para buscar o paci_id pelo nome do paciente
-      const response = await axios.get(`http://192.168.0.103:3000/api/BuscarNome/${consulta.paci_nome}`);
+      const response = await axios.get(`http://10.47.0.224:3000/api/BuscarNome/${consulta.paci_nome}`);
       
       // Log da resposta completa para verificar a estrutura
       console.log('Resposta da API:', response.data);

@@ -56,7 +56,7 @@ const Consultas = () => {
   const fetchConsultas = async (selectedDate?: string) => {
     try {
       if (ubsId !== null) {
-        let url = `http://192.168.0.103:3000/api/Consulta/ubs/${ubsId}`;
+        let url = `http://10.47.0.224:3000/api/Consulta/ubs/${ubsId}`;
         if (selectedDate) {
           url += `?data=${selectedDate}`;
         }
@@ -144,7 +144,7 @@ const Consultas = () => {
     try {
       console.log(`Atualizando status da consulta com consul_id: ${consulId} para ${newStatus}`);
 
-      const url = `http://192.168.0.103:3000/api/consulta/${consulId}/estado`;
+      const url = `http://10.47.0.224:3000/api/consulta/${consulId}/estado`;
       await axios.put(url, { consul_estado: newStatus });
       
       Alert.alert('Sucesso', `Status da consulta atualizado para "${newStatus}".`);
