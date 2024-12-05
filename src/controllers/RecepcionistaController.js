@@ -2,6 +2,40 @@ const RecepcionistaModel = require('../services/RecepcionistaModel');
 
 module.exports = {
 
+    inserirRecep: async (req, res) => {
+        let json = { error: '', result: {} };
+
+        let nome = req.body.recep_nome;
+        let CPF = req.body.recep_CPF;
+        let telefone = req.body.recep_cel;
+        let email = req.body.recep_email;
+        let senha = req.body.recep_senha;
+        let ubs_id = req.body.ubs_id; // Adicionando o campo ubs_id
+
+        if (nome && CPF && telefone && email && senha && ubs_id) {
+            try {
+                let recep_id = await RecepcionistaModel.inserirRecep(nome, CPF, telefone, email, senha, ubs_id);
+                json.result = {
+                    recep_id: recep_id,
+                    nome,
+                    CPF,
+                    telefone,
+                    email,
+                    senha,
+                    ubs_id
+                };
+            } catch (error) {
+                json.error = 'Erro ao inserir dados no MySQL ou Supabase';
+            }
+        } else {
+            json.error = 'Campos não enviados';
+        }
+
+        res.json(json);
+},
+
+
+
     alterarDadosRecepcionista: async (req, res) => {
         let json = { error: '', result: {} };
    

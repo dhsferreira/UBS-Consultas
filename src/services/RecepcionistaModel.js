@@ -1,12 +1,74 @@
 const db = require('../db');
 const { createClient } = require('@supabase/supabase-js');
 
-// Configuração do Supabase
+// Configuração do Supabase diretamente no model
 const supabaseUrl = 'https://mvxazgyzgiuivzngdbov.supabase.co'; // Substitua pela URL do seu projeto
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12eGF6Z3l6Z2l1aXZ6bmdkYm92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjc5ODcyMjMsImV4cCI6MjA0MzU2MzIyM30.Qg05UnatADTemLtofxUeI-b7CQqt3gb8bVNmuO7q5n0'; // Substitua pela sua chave de API
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 module.exports = {
+
+    inserirRecep: (recep_nome, recep_CPF, recep_cel, recep_email, recep_senha, ubs_id) => {
+        return new Promise((aceito, recusado) => {
+            console.log("Iniciando a inserção no MySQL...");
+            
+            // Logando os parâmetros antes da inserção
+            console.log('Parâmetros para inserção no MySQL:', {
+                recep_nome, recep_CPF, recep_cel, recep_email, recep_senha, ubs_id
+            });
+    
+            // Primeiro, insere no MySQL
+            db.query(
+                'INSERT INTO recepcionista (recep_nome, recep_CPF, recep_cel, recep_email, recep_senha, ubs_id) VALUES (?,?,?,?,?,?)',
+                [recep_nome, recep_CPF, recep_cel, recep_email, recep_senha, ubs_id],
+                async (error, results) => {
+                    if (error) {
+                        console.error('Erro ao inserir no MySQL:', error);
+                        return recusado({ message: 'Erro ao inserir no MySQL', error });
+                    }
+    
+                    console.log('Inserção no MySQL bem-sucedida, ID gerado:', results.insertId);
+                    const recep_id = results.insertId;
+    
+                    try {
+                        console.log("Iniciando a inserção no Supabase...");
+    
+                        // Logando os dados a serem inseridos no Supabase
+                        console.log('Dados para inserção no Supabase:', {
+                            recep_id, recep_nome, recep_CPF, recep_cel, recep_email, recep_senha, ubs_id
+                        });
+    
+                        // Agora insere no Supabase
+                        const { data, error: supabaseError } = await supabase
+                            .from('recepcionista')
+                            .insert([{
+                                recep_id: recep_id, // Usando o recep_id gerado no MySQL
+                                recep_nome: recep_nome,
+                                recep_CPF: recep_CPF,
+                                recep_cel: recep_cel,
+                                recep_email: recep_email,
+                                recep_senha: recep_senha,
+                                ubs_id: ubs_id
+                            }]);
+    
+                        if (supabaseError) {
+                            console.error('Erro ao inserir no Supabase:', supabaseError);
+                            return recusado({ message: 'Erro ao inserir no Supabase', error: supabaseError });
+                        }
+    
+                        console.log('Inserção no Supabase bem-sucedida:', data);
+                        aceito(recep_id); // Retorna o ID do recepcionista que foi inserido
+    
+                    } catch (err) {
+                        console.error('Erro durante a inserção no Supabase:', err);
+                        return recusado({ message: 'Erro durante a inserção no Supabase', error: err });
+                    }
+                }
+            );
+        });
+    },
+    
+    
 
     alterarDadosRecepcionista: (recep_id, dados) => {
         return new Promise((aceito, recusado) => {
@@ -341,40 +403,89 @@ module.exports = {
     buscarHorariosNaoVinculados: async (horarios_dia) => {
         return new Promise((aceito, recusado) => {
             const query = `
-                SELECT DISTINCT dh.horarios_horarios
-                FROM datas_horarios dh
-                LEFT JOIN horarios_areas ha ON dh.horarios_id = ha.horarios_id
-                WHERE dh.horarios_dia = ?
-                AND dh.horarios_dispo = 1
-                AND ha.horarios_id IS NULL
+                SELECT horarios_id
+                FROM datas_horarios
+                WHERE DATE(horarios_dia) = ?
             `;
+    
             db.query(query, [horarios_dia], (error, results) => {
                 if (error) {
-                    console.error('Erro ao buscar os horários não vinculados:', error);
-                    recusado({ error: 'Erro ao buscar os horários não vinculados.', details: error });
+                    recusado({ error: 'Ocorreu um erro ao buscar os horários.', details: error });
                     return;
                 }
     
-                console.log('Resultados da consulta:', results); // Log dos resultados da consulta
+                // Verificando se algum resultado foi encontrado
+                if (results.length === 0) {
+                    recusado({ error: 'Nenhum horário encontrado para a data fornecida.' });
+                    return;
+                }
     
-                // Aceita apenas os horários disponíveis
-                aceito(results); // Retorna os horários encontrados
+                // Obter os horarios_id encontrados na tabela datas_horarios
+                const horariosIds = results.map(horario => horario.horarios_id);
+    
+                // Consultar os horarios_id que já estão vinculados na tabela horarios_areas
+                const checkQuery = `
+                    SELECT horarios_id
+                    FROM horarios_areas
+                    WHERE horarios_id IN (?)`;
+    
+                db.query(checkQuery, [horariosIds], (checkError, checkResults) => {
+                    if (checkError) {
+                        recusado({ error: 'Erro ao verificar os horários vinculados.', details: checkError });
+                        return;
+                    }
+    
+                    // Filtrando os horarios_id não vinculados
+                    const horariosVinculados = checkResults.map(horario => horario.horarios_id);
+                    const horariosNaoVinculados = horariosIds.filter(id => !horariosVinculados.includes(id));
+    
+                    if (horariosNaoVinculados.length === 0) {
+                        recusado({ error: 'Todos os horários para essa data já estão vinculados.' });
+                        return;
+                    }
+    
+                    // Buscar os detalhes dos horários não vinculados (horarios_horarios)
+                    const detalhesQuery = `
+                        SELECT horarios_horarios
+                        FROM datas_horarios
+                        WHERE horarios_id IN (?)`;
+    
+                    db.query(detalhesQuery, [horariosNaoVinculados], (detalhesError, detalhesResults) => {
+                        if (detalhesError) {
+                            recusado({ error: 'Erro ao buscar os detalhes dos horários.', details: detalhesError });
+                            return;
+                        }
+    
+                        // Retorna os detalhes dos horarios não vinculados
+                        aceito(detalhesResults);
+                    });
+                });
             });
         });
     },
     
     
 
+      
+      
+      
+
+    
+    
+    
+    
 
 
 
-    buscarDiasNaoVinculados: async () => {
+
+      buscarDiasNaoVinculados: async () => {
         return new Promise((aceito, recusado) => {
             const query = `
                 SELECT DISTINCT dh.horarios_dia
                 FROM datas_horarios dh
                 LEFT JOIN horarios_areas ha ON dh.horarios_id = ha.horarios_id
                 WHERE ha.horarios_id IS NULL
+                ORDER BY dh.horarios_dia ASC
             `;
             db.query(query, (error, results) => {
                 if (error) {
@@ -382,17 +493,18 @@ module.exports = {
                     recusado({ error: 'Erro ao buscar os dias não vinculados.', details: error });
                     return;
                 }
-
+    
                 // Formatar as datas para o formato "YYYY-MM-DD"
                 const diasFormatados = results.map(result => {
                     const date = new Date(result.horarios_dia); // Supondo que 'horarios_dia' é a propriedade que contém a data
                     return date.toISOString().slice(0, 10); // Formato: "YYYY-MM-DD"
                 });
-
+    
                 aceito(diasFormatados); // Retorna as datas formatadas
             });
         });
     },
+    
 
 
 

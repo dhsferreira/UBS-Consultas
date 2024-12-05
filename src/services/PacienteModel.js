@@ -7,54 +7,59 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 module.exports = {
-    inserir: (paci_nome, paci_data_nascimento, paci_CPF, paci_cel, paci_email, paci_endereco, paci_senha) => {
-        return new Promise((aceito, recusado) => {
-            // Primeiro, insere no MySQL
-            db.query(
-                'INSERT INTO paciente (paci_nome, paci_data_nascimento, paci_CPF, paci_cel, paci_email, paci_endereco, paci_senha) VALUES (?,?,?,?,?,?,?)',
-                [paci_nome, paci_data_nascimento, paci_CPF, paci_cel, paci_email, paci_endereco, paci_senha],
-                async (error, results) => {
-                    if (error) {
-                        console.error('Erro ao inserir no MySQL:', error);
-                        recusado(error);
-                        return;
-                    }
-
-                    const paci_id = results.insertId;
-
-                    try {
-                        // Agora insere no Supabase
-                        const { data, error: supabaseError } = await supabase
-                            .from('paciente')
-                            .insert([
-                                {
-                                    paci_id: paci_id, // Usando o paci_id gerado no MySQL
-                                    paci_nome: paci_nome,
-                                    paci_data_nascimento: paci_data_nascimento,
-                                    paci_cpf: paci_CPF,
-                                    paci_cel: paci_cel,
-                                    paci_email: paci_email,
-                                    paci_endereco: paci_endereco,
-                                    paci_senha: paci_senha
-                                }
-                            ]);
-
-                        if (supabaseError) {
-                            console.error('Erro ao inserir no Supabase:', supabaseError);
-                            recusado(supabaseError); // Caso haja erro no Supabase
-                            return;
-                        }
-
-                        console.log('Inserção no Supabase bem-sucedida:', data);
-                        aceito(paci_id); // Retorna o ID do paciente que foi inserido
-                    } catch (err) {
-                        console.error('Erro durante a inserção no Supabase:', err);
-                        recusado(err);
-                    }
-                }
-            );
-        });
-    },
+        inserir: (paci_nome, paci_data_nascimento, paci_CPF, paci_cel, paci_email, paci_endereco, paci_senha) => {
+        return new Promise((aceito, recusado) => {
+            console.log("Iniciando a inserção no MySQL...");
+            
+            // Primeiro, insere no MySQL
+            db.query(
+                'INSERT INTO paciente (paci_nome, paci_data_nascimento, paci_CPF, paci_cel, paci_email, paci_endereco, paci_senha) VALUES (?,?,?,?,?,?,?)',
+                [paci_nome, paci_data_nascimento, paci_CPF, paci_cel, paci_email, paci_endereco, paci_senha],
+                async (error, results) => {
+                    if (error) {
+                        console.error('Erro ao inserir no MySQL:', error);
+                        return recusado({ message: 'Erro ao inserir no MySQL', error });
+                    }
+    
+                    console.log('Inserção no MySQL bem-sucedida, ID gerado:', results.insertId);
+                    const paci_id = results.insertId;
+    
+                    try {
+                        console.log("Iniciando a inserção no Supabase...");
+    
+                        // Agora insere no Supabase
+                        const { data, error: supabaseError } = await supabase
+                            .from('paciente')
+                            .insert([
+                                {
+                                    paci_id: paci_id, // Usando o paci_id gerado no MySQL
+                                    paci_nome: paci_nome,
+                                    paci_data_nascimento: paci_data_nascimento,
+                                    paci_CPF: paci_CPF,
+                                    paci_cel: paci_cel,
+                                    paci_email: paci_email,
+                                    paci_endereco: paci_endereco,
+                                    paci_senha: paci_senha
+                                }
+                            ]);
+    
+                        if (supabaseError) {
+                            console.error('Erro ao inserir no Supabase:', supabaseError);
+                            return recusado({ message: 'Erro ao inserir no Supabase', error: supabaseError });
+                        }
+    
+                        console.log('Inserção no Supabase bem-sucedida:', data);
+                        aceito(paci_id); // Retorna o ID do paciente que foi inserido
+    
+                    } catch (err) {
+                        console.error('Erro durante a inserção no Supabase:', err);
+                        return recusado({ message: 'Erro durante a inserção no Supabase', error: err });
+                    }
+                }
+            );
+        });
+    },
+    
 
 
     alterarDadosPaciente: (paci_id, dados) => {

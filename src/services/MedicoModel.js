@@ -8,6 +8,63 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 module.exports ={
+    inserirMed: (medi_nome, medi_CPF, medi_cel, medi_email, medi_senha, medi_especializa, medi_CRM, medi_area, ubs_id) => {
+        return new Promise((aceito, recusado) => {
+            console.log("Iniciando a inserção no MySQL...");
+            
+            // Primeiro, insere no MySQL
+            db.query(
+                'INSERT INTO medico (medi_nome, medi_CPF, medi_cel, medi_email, medi_senha, medi_especializa, medi_CRM, medi_area, ubs_id) VALUES (?,?,?,?,?,?,?,?,?)',
+                [medi_nome, medi_CPF, medi_cel, medi_email, medi_senha, medi_especializa, medi_CRM, medi_area, ubs_id],
+                async (error, results) => {
+                    if (error) {
+                        console.error('Erro ao inserir no MySQL:', error);
+                        return recusado({ message: 'Erro ao inserir no MySQL', error });
+                    }
+    
+                    console.log('Inserção no MySQL bem-sucedida, ID gerado:', results.insertId);
+                    const medi_id = results.insertId;
+    
+                    try {
+                        console.log("Iniciando a inserção no Supabase...");
+    
+                        // Agora insere no Supabase
+                        const { data, error: supabaseError } = await supabase
+                            .from('medico')
+                            .insert([
+                                {
+                                    medi_id: medi_id, // Usando o medi_id gerado no MySQL
+                                    medi_nome: medi_nome,
+                                    medi_CPF: medi_CPF,
+                                    medi_cel: medi_cel,
+                                    medi_email: medi_email,
+                                    medi_senha: medi_senha,
+                                    medi_especializa: medi_especializa,
+                                    medi_CRM: medi_CRM,
+                                    medi_area: medi_area,
+                                    ubs_id: ubs_id
+                                }
+                            ]);
+    
+                        if (supabaseError) {
+                            console.error('Erro ao inserir no Supabase:', supabaseError);
+                            return recusado({ message: 'Erro ao inserir no Supabase', error: supabaseError });
+                        }
+    
+                        console.log('Inserção no Supabase bem-sucedida:', data);
+                        aceito(medi_id); // Retorna o ID do médico que foi inserido
+    
+                    } catch (err) {
+                        console.error('Erro durante a inserção no Supabase:', err);
+                        return recusado({ message: 'Erro durante a inserção no Supabase', error: err });
+                    }
+                }
+            );
+        });
+    },
+    
+    
+
     alterarDadosMedico: (medi_id, dados) => {
         return new Promise((aceito, recusado) => {
             const fieldsToUpdate = [];

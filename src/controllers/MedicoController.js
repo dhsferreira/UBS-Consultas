@@ -3,6 +3,48 @@ const consultaModel = require('../services/MedicoModel');
 
 module.exports = {
 
+  inserirMed: async (req, res) => {
+    let json = { error: '', result: {} };
+
+    let medi_nome = req.body.medi_nome;
+    let medi_CPF = req.body.medi_CPF;
+    let medi_cel = req.body.medi_cel;
+    let medi_email = req.body.medi_email;
+    let medi_senha = req.body.medi_senha;
+    let medi_especializa = req.body.medi_especializa;
+    let medi_CRM = req.body.medi_CRM;
+    let medi_area = req.body.medi_area;
+    let ubs_id = req.body.ubs_id;
+
+    if (medi_nome && medi_CPF && medi_cel && medi_email && medi_senha && medi_especializa && medi_CRM && medi_area && ubs_id) {
+        try {
+            // Chama o método de inserção para o médico
+            let medi_id = await MedicoModel.inserirMed(medi_nome, medi_CPF, medi_cel, medi_email, medi_senha, medi_especializa, medi_CRM, medi_area, ubs_id);
+            
+            json.result = {
+                medi_id: medi_id,
+                medi_nome,
+                medi_CPF,
+                medi_cel,
+                medi_email,
+                medi_senha,
+                medi_especializa,
+                medi_CRM,
+                medi_area,
+                ubs_id
+            };
+        } catch (error) {
+            json.error = 'Erro ao inserir dados no MySQL ou Supabase';
+            console.error(error);
+        }
+    } else {
+        json.error = 'Campos não enviados';
+    }
+
+    res.json(json);
+},
+
+
     alterarDadosMedico: async (req, res) => {
         let json = { error: '', result: {} };
    

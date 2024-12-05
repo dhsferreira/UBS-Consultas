@@ -40,6 +40,26 @@ module.exports = {
         res.status(500).json(json);
     }
 },
+
+buscarHorariosDiaPorUbsEAreaNome2: async (req, res) => {
+  let json = { error: '', result: [] };
+
+  try {
+      const { area_nome, ubs_id } = req.params; // Obtém o nome da área e o ID da UBS dos parâmetros da URL
+
+      // Chama o método combinado do modelo para buscar os horários do dia
+      const horariosDia = await SistemaModel.buscarHorariosDiaPorUbsEAreaNome2(ubs_id, area_nome);
+      json.result = horariosDia; // Armazena os horários do dia no objeto json de resposta
+      res.status(200).json(json);
+  } catch (error) {
+      console.error('Erro no controlador ao buscar os horários do dia:', error);
+      json.error = 'Erro ao buscar os horários do dia.';
+      if (error.details) {
+          json.details = error.details;
+      }
+      res.status(500).json(json);
+  }
+},
   
 buscarHorariosPorUbsAreaEDia: async (req, res) => {
   const { ubs_id, area_nome, horarios_dia } = req.params; // Obtém os parâmetros da URL
@@ -47,6 +67,19 @@ buscarHorariosPorUbsAreaEDia: async (req, res) => {
   try {
       // Chama o método do modelo para buscar os horários
       const horarios = await SistemaModel.buscarHorariosPorUbsAreaEDia(ubs_id, area_nome, horarios_dia);
+      res.status(200).json({ result: horarios });
+  } catch (error) {
+      console.error('Erro no controlador ao buscar os horários:', error);
+      res.status(500).json({ error: 'Erro ao buscar os horários.', details: error.details });
+  }
+},
+
+buscarHorariosPorUbsAreaEDia2: async (req, res) => {
+  const { ubs_id, area_nome, horarios_dia } = req.params; // Obtém os parâmetros da URL
+
+  try {
+      // Chama o método do modelo para buscar os horários
+      const horarios = await SistemaModel.buscarHorariosPorUbsAreaEDia2(ubs_id, area_nome, horarios_dia);
       res.status(200).json({ result: horarios });
   } catch (error) {
       console.error('Erro no controlador ao buscar os horários:', error);
