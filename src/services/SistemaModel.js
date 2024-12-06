@@ -87,61 +87,57 @@ module.exports = {
 
   buscarHorariosDiaPorUbsEAreaNome2: (ubs_id, area_nome) => {
     return new Promise((aceito, recusado) => {
-      // Primeiro, buscar o area_id com base no area_nome
-      db.query(
-        'SELECT area_id FROM areas_medicas WHERE area_nome = ?',
-        [area_nome],
-        (error, results) => {
-          if (error) {
-            console.error('Erro ao buscar o ID da área:', error);
-            recusado({ error: 'Erro ao buscar o ID da área.', details: error });
-            return;
-          }
-  
-          if (results.length === 0) {
-            console.error('Área não encontrada para o nome:', area_nome);
-            recusado({ error: 'Área não encontrada.' });
-            return;
-          }
-  
-          const area_id = results[0].area_id;
-          console.log('Área ID encontrado:', area_id);
-  
-          // Em seguida, buscar todos os horarios_dia disponíveis para o ubs_id e area_id, excluindo os horários já vinculados a consultas
-          db.query(
-            `SELECT DISTINCT datas_horarios.horarios_dia
-             FROM datas_horarios
-             INNER JOIN horarios_areas ON datas_horarios.horarios_id = horarios_areas.horarios_id
-             INNER JOIN tabela_ligacao_ubs ON horarios_areas.area_id = tabela_ligacao_ubs.area_id
-             WHERE tabela_ligacao_ubs.ubs_id = ?
-             AND horarios_areas.area_id = ?
-             AND datas_horarios.horarios_dispo = 0
-             AND NOT EXISTS (
-               SELECT 1
-               FROM consulta
-               WHERE consulta.horarios_id = datas_horarios.horarios_id
-             )`, // Exclui horários já vinculados a consultas
-            [ubs_id, area_id],
+        // Primeiro, buscar o area_id com base no area_nome
+        db.query(
+            'SELECT area_id FROM areas_medicas WHERE area_nome = ?',
+            [area_nome],
             (error, results) => {
-              if (error) {
-                console.error('Erro ao buscar os horários do dia:', error);
-                recusado({ error: 'Erro ao buscar os horários do dia.', details: error });
-                return;
-              }
-  
-              // Formatando a data para 'YYYY-MM-DD'
-              const formattedResults = results.map(result => ({
-                ...result,
-                horarios_dia: result.horarios_dia.toISOString().split('T')[0]
-              }));
-  
-              aceito(formattedResults);
+                if (error) {
+                    console.error('Erro ao buscar o ID da área:', error);
+                    recusado({ error: 'Erro ao buscar o ID da área.', details: error });
+                    return;
+                }
+
+                if (results.length === 0) {
+                    console.error('Área não encontrada para o nome:', area_nome);
+                    recusado({ error: 'Área não encontrada.' });
+                    return;
+                }
+
+                const area_id = results[0].area_id;
+                console.log('Área ID encontrado:', area_id);
+
+                // Em seguida, buscar todos os horarios_dia disponíveis para o ubs_id e area_id
+                db.query(
+                    `SELECT DISTINCT datas_horarios.horarios_dia
+                     FROM datas_horarios
+                     INNER JOIN horarios_areas ON datas_horarios.horarios_id = horarios_areas.horarios_id
+                     INNER JOIN tabela_ligacao_ubs ON horarios_areas.area_id = tabela_ligacao_ubs.area_id
+                     WHERE tabela_ligacao_ubs.ubs_id = ?
+                     AND horarios_areas.area_id = ?
+                     AND datas_horarios.horarios_dispo = 0`,
+                    [ubs_id, area_id],
+                    (error, results) => {
+                        if (error) {
+                            console.error('Erro ao buscar os horários do dia:', error);
+                            recusado({ error: 'Erro ao buscar os horários do dia.', details: error });
+                            return;
+                        }
+
+                        // Formatando a data para 'YYYY-MM-DD'
+                        const formattedResults = results.map(result => ({
+                            ...result,
+                            horarios_dia: result.horarios_dia.toISOString().split('T')[0]
+                        }));
+
+                        aceito(formattedResults);
+                    }
+                );
             }
-          );
-        }
-      );
+        );
     });
-  },
+},
+
   
   
   buscarHorariosPorUbsAreaEDia: (ubs_id, area_nome, horarios_dia) => {
