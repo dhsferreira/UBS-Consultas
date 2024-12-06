@@ -275,15 +275,31 @@ export default function App() {
 
       <Text style={styles.subtitle}>Escolha a data:</Text>
       <Picker
-        selectedValue={selectedData}
-        onValueChange={(itemValue) => setSelectedData(itemValue)}
-        enabled={selectedAtendimento !== ''}
-      >
-        <Picker.Item label="Selecione um dia" value="" />
-        {diasList.map((dia) => (
-          <Picker.Item key={dia.horarios_dia} label={formatDate(dia.horarios_dia)} value={dia.horarios_dia} />
-        ))}
-      </Picker>
+  selectedValue={selectedData}
+  onValueChange={(itemValue) => setSelectedData(itemValue)}
+  enabled={selectedAtendimento !== ''}
+>
+  {/* Exibe a opção "Selecione um dia" */}
+  <Picker.Item label="Selecione um dia" value="" />
+
+  {/* Lista todos os dias, mas torna apenas os disponíveis clicáveis */}
+  {['2024-12-06', '2024-12-07', '2024-12-08', '2024-12-09'].map((dia) => {
+    const isAvailable = diasList.some(d => d.horarios_dia === dia); // Verifica se o dia está disponível na lista
+    return (
+      <Picker.Item
+        key={dia}
+        label={`${formatDate(dia)} ${isAvailable ? '' : '❌'}`} // Adiciona "❌" se o dia não estiver disponível
+        value={dia}
+        style={{
+          color: isAvailable ? 'black' : 'gray', // Aplica cinza se não for um dia disponível
+        }}
+        enabled={isAvailable} // Torna o item clicável somente se estiver disponível
+      />
+    );
+  })}
+</Picker>
+
+
 
       <Text style={styles.subtitle}>Escolha o horário:</Text>
       <Picker
@@ -299,13 +315,13 @@ export default function App() {
     const isAvailable = horariosList.some(h => h.horarios_horarios === hora); // Verifica se o horário está disponível
     return (
       <Picker.Item
-        key={hora}
-        label={hora}
-        value={hora}
-        style={{
-          color: isAvailable ? 'black' : 'gray', // Aplica cinza se não for um horário disponível
-        }}
-        enabled={isAvailable} // Torna o item clicável somente se estiver disponível
+      key={hora}
+      label={`${hora} ${isAvailable ? '' : '❌'}`}
+      value={hora}
+      style={{
+        color: isAvailable ? 'black' : 'gray', // Aplica cinza se não for um horário disponível
+      }}
+      enabled={isAvailable} // Torna o item clicável somente se estiver disponível
       />
     );
   })}

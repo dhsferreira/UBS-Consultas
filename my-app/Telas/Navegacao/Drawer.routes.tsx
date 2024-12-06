@@ -2,6 +2,7 @@ import React from 'react';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createStackNavigator } from '@react-navigation/stack';
 import LoginScreen from '../Login/Login';
+import ResetPasswordScreen from '../Login/RecuperarSenha';
 import CadastroScreen from '../Cadastro/Cadastro';
 import NoticiasScreen from '../Noticias/telaNoticias';
 import ConsultasScreen from '../Consultas/Consultas';
@@ -40,6 +41,19 @@ function DrawerRoutes() {
               swipeEnabled: false,
             }}
           />
+
+          <Drawer.Screen
+            name="ResetPassword"
+            component={ResetPasswordScreen}
+            options={{
+              drawerLabel: 'RecuperarSenha',
+              drawerIcon: ({ color, size }) => (
+                <Ionicons name="senha" size={size} color={color} />
+              ),
+              swipeEnabled: false,
+            }}
+          />
+
           <Drawer.Screen
             name="Cadastro"
             component={CadastroScreen}

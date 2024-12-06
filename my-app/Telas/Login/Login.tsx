@@ -138,9 +138,10 @@ const SignInScreen = ({ navigation }: SignInScreenProps) => {
                     onChangeText={setPassword}
                     right={<TextInput.Icon icon={passwordVisible ? "eye-off" : "eye"} onPress={() => setPasswordVisible(!passwordVisible)} />}
                 />
-                <Button style={styles.textButton}>
-                    Esqueceu sua senha?
-                </Button>
+               <Button style={styles.textButton} onPress={() => navigation.navigate('ResetPassword')}>
+  Esqueceu sua senha?
+</Button>
+
                 <Button style={styles.textButton}  onPress={() => navigation.navigate('Cadastro', { userType: radioValue })}>
                     Não tem uma conta? Cadastrar-se
                 </Button>

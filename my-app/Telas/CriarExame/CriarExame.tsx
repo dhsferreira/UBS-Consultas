@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Image, Text, TouchableOpacity, TextInput, Button, Alert, ScrollView } from 'react-native';
 import { useNavigation, DrawerActions } from '@react-navigation/native';
+import { TextInputMask } from 'react-native-masked-text'; // Importa a biblioteca
 import axios from 'axios';
 import { supabase } from '../Supabase'; // Importa seu Supabase existente
 import { styles } from '../CriarExame/CriarExames';
@@ -29,7 +30,7 @@ const Consultas = ({ route }) => {
   useEffect(() => {
     const fetchPaciNome = async () => {
       try {
-        const response = await axios.get(`http://10.47.0.224:3000/api/Nome/${paciId}`);
+        const response = await axios.get(`http://192.168.0.102:3000/api/Nome/${paciId}`);
         setPaciNome(response.data.paci_nome);
       } catch (error) {
         console.error('Erro ao buscar o nome do paciente:', error);
@@ -75,7 +76,7 @@ const Consultas = ({ route }) => {
 
   const fetchUbsNome = async (ubsId) => {
     try {
-      const response = await axios.get(`http://10.47.0.224:3000/api/Ubs/${ubsId}/nome`);
+      const response = await axios.get(`http://192.168.0.102:3000/api/Ubs/${ubsId}/nome`);
       console.log('Resposta da API de UBS:', response.data);
       setUbsNome(response.data.result.ubs_nome);
     } catch (error) {
@@ -89,7 +90,11 @@ const Consultas = ({ route }) => {
 
   const adicionarReceita = async () => {
     try {
-      const response = await axios.post('http://10.47.0.224:3000/api/criarReceita', {
+      // Formata as datas para o formato 'YYYY-MM-DD' antes de enviar
+      const formattedDataEmissao = dataEmissao.split('/').reverse().join('-');
+      const formattedDataValidade = dataValidade.split('/').reverse().join('-');
+
+      const response = await axios.post('http://192.168.0.102:3000/api/criarReceita', {
         ubs_id: ubsId,
         medi_id: mediId,
         paci_id: paciId,
@@ -98,8 +103,8 @@ const Consultas = ({ route }) => {
         frequencia_dosagem: frequenciaDosagem,
         tempo_uso: tempoUso,
         observacao_medica: observacaoMedica,
-        data_emissao: dataEmissao,
-        data_validade: dataValidade,
+        data_emissao: formattedDataEmissao,  // Envia a data de emissão formatada
+        data_validade: formattedDataValidade,  // Envia a data de validade formatada
       });
       Alert.alert('Sucesso', `Receita adicionada com ID: ${response.data.result.receita_id}`);
       // Navegação após sucesso na criação da receita
@@ -182,18 +187,26 @@ const Consultas = ({ route }) => {
           value={observacaoMedica}
           onChangeText={setObservacaoMedica}
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Data de Emissão (YYYY-MM-DD)"
-          value={dataEmissao}
-          onChangeText={setDataEmissao}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Data de Validade (YYYY-MM-DD)"
-          value={dataValidade}
-          onChangeText={setDataValidade}
-        />
+        <TextInputMask
+        style={styles.input}
+        type={'datetime'}
+        options={{
+          format: 'DD/MM/YYYY', // Formato que será exibido
+        }}
+        value={dataEmissao}
+        onChangeText={setDataEmissao}
+        placeholder="Data de Emissão (DD/MM/YYYY)"
+      />
+          <TextInputMask
+        style={styles.input}
+        type={'datetime'}
+        options={{
+          format: 'DD/MM/YYYY', // Formato que será exibido
+        }}
+        value={dataValidade}
+        onChangeText={setDataValidade}
+        placeholder="Data de Validade (DD/MM/YYYY)"
+      />
 
         <View style={styles.buttonContainer}>
           <Button title="Adicionar Receita" onPress={adicionarReceita} />
