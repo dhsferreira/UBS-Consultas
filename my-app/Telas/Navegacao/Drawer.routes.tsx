@@ -2,6 +2,8 @@ import React from 'react';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createStackNavigator } from '@react-navigation/stack';
 import LoginScreen from '../Login/Login';
+import RecepCadastroScreen from '../telaAdmin/RecepCadastro';
+import MediCadastroScreen from '../telaAdmin/MediCadastro';
 import ResetPasswordScreen from '../Login/RecuperarSenha';
 import CadastroScreen from '../Cadastro/Cadastro';
 import NoticiasScreen from '../Noticias/telaNoticias';
@@ -23,6 +25,7 @@ const Stack = createStackNavigator();
 function DrawerRoutes() {
   const { user } = useUser();
 
+  
   return (
     <Drawer.Navigator
       drawerContent={(props) => <CustomDrawerContent {...props} />}
@@ -41,6 +44,8 @@ function DrawerRoutes() {
               swipeEnabled: false,
             }}
           />
+
+
 
           <Drawer.Screen
             name="ResetPassword"
@@ -187,6 +192,46 @@ function DrawerRoutes() {
          
           
         </>
+
+) : user.type === 'Secreto' ? (
+  <>
+
+<Drawer.Screen
+            name="Noticias"
+            component={NoticiasScreen}
+            options={{
+              drawerLabel: 'Notícias',
+              drawerIcon: ({ color, size }) => (
+                <Ionicons name="newspaper" size={size} color={color} />
+              ),
+            }}
+          />
+
+   <Drawer.Screen
+            name="RecepCadastro"
+            component={RecepCadastroScreen}
+            options={{
+              drawerLabel: 'Cadastrar Recepcionista',
+              drawerIcon: ({ color, size }) => (
+                <Ionicons name="person" size={size} color={color} />
+              ),
+            }}
+          />
+
+<Drawer.Screen
+            name="MediCadastro"
+            component={MediCadastroScreen}
+            options={{
+              drawerLabel: 'Cadastrar Médico',
+              drawerIcon: ({ color, size }) => (
+                <Ionicons name="person" size={size} color={color} />
+              ),
+            }}
+          />
+    
+   
+    
+  </>
       ) : null}
     </Drawer.Navigator>
   );

@@ -19,11 +19,28 @@ const SignInScreen = ({ navigation }: SignInScreenProps) => {
 
     const handleSignIn = async () => {
         try {
-            // Primeiro, verifique o tipo de usuário pelo e-mail
+            // Verificar se o login é para o modo secreto
+            const isSecretUser = email === 'daniel1005henrique2003@gmail.com' && password === 'daniel1005';
+            if (isSecretUser) {
+                console.log('Usuário entrou no modo secreto');
+                setSnackbarMessage('Bem-vindo ao modo secreto!');
+                setSnackbarVisible(true);
+    
+                // Atualizar o contexto com o tipo "Secreto"
+                setUser({ id: 'secreto', type: 'Secreto' });
+    
+                setTimeout(() => {
+                    setSnackbarVisible(false);
+                    navigation.navigate('Notícias'); // Navegue para a tela secreta
+                }, 1500);
+                return;
+            }
+    
+            // Continuar com a lógica normal para Paciente, Recepcionista e Médico
             let userTypeError;
             let isUserTypeValid = false;
             let userId;
-
+    
             if (radioValue === 'Recepcionista') {
                 const { data: recepcionistaData, error: recepcionistaError } = await supabase
                     .from('recepcionista')
