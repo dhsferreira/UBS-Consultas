@@ -144,6 +144,26 @@ buscarNomePorId: async (req, res) => {
   }
 }, 
 
+TodosMediDeUmaArea: async (req, res) => {
+  let json = { error: '', result: [] };
+
+  try {
+    const { area_nome } = req.params; // Obtém o nome da área dos parâmetros da URL
+
+    // Chama a função do model para buscar os médicos pela área
+    const medicos = await SistemaModel.TodosMediDeUmaArea(area_nome);
+    json.result = medicos; // Armazena os médicos encontrados no objeto json de resposta
+
+    res.status(200).json(json);
+  } catch (error) {
+    console.error('Erro ao buscar médicos pela área:', error);
+    json.error = 'Erro ao buscar médicos pela área.';
+    if (error.details) {
+      json.details = error.details;
+    }
+    res.status(500).json(json);
+  }
+},
 
 };
    

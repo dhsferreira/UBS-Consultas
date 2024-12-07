@@ -3,47 +3,53 @@ const consultaModel = require('../services/MedicoModel');
 
 module.exports = {
 
-  inserirMed: async (req, res) => {
-    let json = { error: '', result: {} };
-
-    let medi_nome = req.body.medi_nome;
-    let medi_CPF = req.body.medi_CPF;
-    let medi_cel = req.body.medi_cel;
-    let medi_email = req.body.medi_email;
-    let medi_senha = req.body.medi_senha;
-    let medi_especializa = req.body.medi_especializa;
-    let medi_CRM = req.body.medi_CRM;
-    let medi_area = req.body.medi_area;
-    let ubs_id = req.body.ubs_id;
-
-    if (medi_nome && medi_CPF && medi_cel && medi_email && medi_senha && medi_especializa && medi_CRM && medi_area && ubs_id) {
-        try {
-            // Chama o método de inserção para o médico
-            let medi_id = await MedicoModel.inserirMed(medi_nome, medi_CPF, medi_cel, medi_email, medi_senha, medi_especializa, medi_CRM, medi_area, ubs_id);
-            
-            json.result = {
-                medi_id: medi_id,
-                medi_nome,
-                medi_CPF,
-                medi_cel,
-                medi_email,
-                medi_senha,
-                medi_especializa,
-                medi_CRM,
-                medi_area,
-                ubs_id
-            };
-        } catch (error) {
-            json.error = 'Erro ao inserir dados no MySQL ou Supabase';
-            console.error(error);
+    inserirMed: async (req, res) => {
+        let json = { error: '', result: {} };
+    
+        let medi_nome = req.body.medi_nome;
+        let medi_CPF = req.body.medi_CPF;
+        let medi_cel = req.body.medi_cel;
+        let medi_email = req.body.medi_email;
+        let medi_senha = req.body.medi_senha;
+        let medi_especializa = req.body.medi_especializa;
+        let medi_CRM = req.body.medi_CRM;
+        let medi_area = req.body.medi_area;
+        let ubs_id = req.body.ubs_id;
+    
+        // Validação dos campos obrigatórios
+        if (medi_nome && medi_CPF && medi_cel && medi_email && medi_senha && medi_especializa && medi_CRM && medi_area && ubs_id) {
+            try {
+                // Chama o método de inserção para o médico
+                let medi_id = await MedicoModel.inserirMed(medi_nome, medi_CPF, medi_cel, medi_email, medi_senha, medi_especializa, medi_CRM, medi_area, ubs_id);
+                
+                // Se a inserção for bem-sucedida, retorna os dados
+                json.result = {
+                    medi_id: medi_id,
+                    medi_nome,
+                    medi_CPF,
+                    medi_cel,
+                    medi_email,
+                    medi_senha,
+                    medi_especializa,
+                    medi_CRM,
+                    medi_area,
+                    ubs_id
+                };
+    
+            } catch (error) {
+                // Caso ocorra erro, retorna a mensagem de erro
+                json.error = 'Erro ao inserir dados no MySQL ou Supabase';
+                console.error(error);
+            }
+        } else {
+            // Caso algum campo obrigatório não tenha sido enviado
+            json.error = 'Campos não enviados';
         }
-    } else {
-        json.error = 'Campos não enviados';
-    }
-
-    res.json(json);
-},
-
+    
+        // Envia a resposta em formato JSON
+        res.json(json);
+    },
+    
 
     alterarDadosMedico: async (req, res) => {
         let json = { error: '', result: {} };
@@ -125,6 +131,65 @@ module.exports = {
             res.status(500).json(json);
         }
     },
+
+TodosMediDeUmaUbs: async (req, res) => {
+    let json = { error: '', result: {} };
+
+    try {
+        // Obtém o ubs_id da URL (parâmetro de rota)
+        let ubs_id = req.params.ubs_id;
+
+        // Valida se o ubs_id foi fornecido
+        if (!ubs_id) {
+            json.error = 'ID da UBS não fornecido';
+            return res.status(400).json(json);
+        }
+
+        // Chama a função do modelo para buscar os médicos associados à UBS
+        let medicos = await MedicoModel.TodosMediDeUmaUbs(ubs_id);
+
+        // Formata a resposta para incluir os dados dos médicos
+        json.result = medicos;
+
+        // Retorna os dados
+        res.json(json);
+    } catch (error) {
+        // Se ocorrer um erro, envia uma resposta de erro
+        json.error = 'Erro ao buscar os médicos da UBS';
+        res.status(500).json(json);
+    }
+},
+
+TodosMediDeUmaArea: async (req, res) => {
+    let json = { error: '', result: [] };
+
+    try {
+        const { area_nome } = req.params; // Obtém o nome da área dos parâmetros da URL
+
+        // Chama a função do model para buscar os médicos pela área
+        const medicos = await MedicoModel.TodosMediDeUmaArea(area_nome);
+
+        // Verifica se algum médico foi encontrado
+        if (medicos.length === 0) {
+            json.error = 'Nenhum médico encontrado para a área especificada.';
+            return res.status(404).json(json); // Se não encontrar médicos, retorna status 404
+        }
+
+        json.result = medicos; // Armazena os médicos encontrados no objeto json de resposta
+        return res.status(200).json(json); // Se encontrou médicos, retorna a lista com status 200
+
+    } catch (error) {
+        console.error('Erro ao buscar médicos pela área:', error);
+        json.error = 'Erro ao buscar médicos pela área.';
+        if (error.details) {
+            json.details = error.details;
+        }
+        return res.status(500).json(json); // Em caso de erro, retorna status 500
+    }
+},
+
+
+
 
 
 

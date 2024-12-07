@@ -33,7 +33,7 @@ cron.schedule('0 0 */5 * *', async () => {  // A cada 5 dias, à meia-noite
 cron.schedule('* * * * *', async () => {
   try {
     await HorarioModel.removerDiasHorariosPassados();
-    console.log('Horários passados removidos automaticamente a cada 1 minuto.');
+  //  console.log('Horários passados removidos automaticamente a cada 1 minuto.');
   } catch (err) {
     console.error('Erro ao remover horários passados automaticamente:', err);
   }

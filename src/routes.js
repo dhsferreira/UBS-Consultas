@@ -74,6 +74,7 @@ router.get('/Nome/:paci_id', PacientesController.PaciNomePorId);
 //----------------------------RECEPCIONISTA-----------------------------------//
 router.post('/recepcionista', RecepcionistaController.inserirRecep);//#
 router.put('/recepcionista/:recep_id', RecepcionistaController.alterarDadosRecepcionista);//#
+router.get('/Recep/:ubs_id', RecepcionistaController.TodasRecepDeUmaUbs);//#
 router.get('/Consulta/ubs/:ubs_id', RecepcionistaController.TodasConsultasDeUmaUbs);//#
 router.get('/consultas/ubs/:ubs_id/horario_dia/:horarios_dia', RecepcionistaController.TodasConsultasDeUmaUbsPorDia);
 router.get('/consultas/ubs/:ubs_id/area/:area_nome', RecepcionistaController.TodasConsultasDeUbsArea);
@@ -87,5 +88,7 @@ router.post('/medico', MedicoController.inserirMed);//#
 router.put('/medico/:medi_id', MedicoController.alterarDadosMedico);//#
 router.post('/criarReceita', MedicoController.adicionarReceita);
 router.post('/criarExame', MedicoController.criarExame);
+router.get('/Medi/:ubs_id', MedicoController.TodosMediDeUmaUbs);//#
+router.get('/Medic/:area_nome', MedicoController.TodosMediDeUmaArea);//#
 module.exports = router;
 

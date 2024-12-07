@@ -278,7 +278,33 @@ module.exports = {
     }
 },
 
-   
+TodasRecepDeUmaUbs: async (req, res) => {
+    let json = { error: '', result: {} };
+
+    try {
+        // Obtém o ubs_id da URL (parâmetro de rota)
+        let ubs_id = req.params.ubs_id;
+
+        // Valida se o ubs_id foi fornecido
+        if (!ubs_id) {
+            json.error = 'ID da UBS não fornecido';
+            return res.status(400).json(json);
+        }
+
+        // Chama a função do modelo para buscar os recepcionistas associados à UBS
+        let recepcionistas = await RecepcionistaModel.TodasRecepDeUmaUbs(ubs_id);
+
+        // Formata a resposta para incluir os dados dos recepcionistas
+        json.result = recepcionistas;
+
+        // Retorna os dados
+        res.json(json);
+    } catch (error) {
+        // Se ocorrer um erro, envia uma resposta de erro
+        json.error = 'Erro ao buscar os recepcionistas da UBS';
+        res.status(500).json(json);
+    }
+},   
    
    
    

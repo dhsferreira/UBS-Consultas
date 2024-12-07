@@ -31,20 +31,18 @@ module.exports ={
                         // Agora insere no Supabase
                         const { data, error: supabaseError } = await supabase
                             .from('medico')
-                            .insert([
-                                {
-                                    medi_id: medi_id, // Usando o medi_id gerado no MySQL
-                                    medi_nome: medi_nome,
-                                    medi_CPF: medi_CPF,
-                                    medi_cel: medi_cel,
-                                    medi_email: medi_email,
-                                    medi_senha: medi_senha,
-                                    medi_especializa: medi_especializa,
-                                    medi_CRM: medi_CRM,
-                                    medi_area: medi_area,
-                                    ubs_id: ubs_id
-                                }
-                            ]);
+                            .insert([{
+                                medi_id: medi_id, // Usando o medi_id gerado no MySQL
+                                medi_nome: medi_nome,
+                                medi_CPF: medi_CPF,
+                                medi_cel: medi_cel,
+                                medi_email: medi_email,
+                                medi_senha: medi_senha,
+                                medi_especializa: medi_especializa,
+                                medi_CRM: medi_CRM,
+                                medi_area: medi_area,
+                                ubs_id: ubs_id
+                            }]);
     
                         if (supabaseError) {
                             console.error('Erro ao inserir no Supabase:', supabaseError);
@@ -52,7 +50,22 @@ module.exports ={
                         }
     
                         console.log('Inserção no Supabase bem-sucedida:', data);
-                        aceito(medi_id); // Retorna o ID do médico que foi inserido
+    
+                        // Inserir na tabela areas_medicas
+                        console.log("Iniciando a inserção na tabela areas_medicas...");
+                        db.query(
+                            'INSERT INTO areas_medicas (area_nome, medi_id) VALUES (?, ?)',
+                            [medi_area, medi_id],
+                            (areaError, areaResults) => {
+                                if (areaError) {
+                                    console.error('Erro ao inserir na tabela areas_medicas:', areaError);
+                                    return recusado({ message: 'Erro ao inserir na tabela areas_medicas', error: areaError });
+                                }
+    
+                                console.log('Inserção na tabela areas_medicas bem-sucedida:', areaResults);
+                                aceito(medi_id); // Retorna o ID do médico que foi inserido
+                            }
+                        );
     
                     } catch (err) {
                         console.error('Erro durante a inserção no Supabase:', err);
@@ -62,6 +75,7 @@ module.exports ={
             );
         });
     },
+    
     
     
 
@@ -174,6 +188,76 @@ module.exports ={
         });
     },
    
+TodosMediDeUmaUbs: (ubs_id) => {
+    return new Promise((aceito, recusado) => {
+        let query = `
+            SELECT
+                medico.medi_nome           -- Nome do médico
+            FROM
+                medico
+            WHERE
+                medico.ubs_id = ?
+        `;
+
+        db.query(query, [ubs_id], (error, results) => {
+            if (error) {
+                recusado({ error: 'Ocorreu um erro ao buscar os médicos.', details: error });
+                return;
+            }
+
+            const medicos = results.map(result => ({
+                medi_nome: result.medi_nome    // Nome do médico
+            }));
+
+            aceito(medicos);
+        });
+    });
+},
+
+TodosMediDeUmaArea: (area_nome) => {
+    return new Promise((resolve, reject) => {
+        console.log(`[INFO] Iniciando busca de médicos para a área: ${area_nome}`); // Log de início
+
+        // Consulta para buscar os medi_nome dos médicos associados à área_nome
+        let query = `
+            SELECT m.medi_nome
+            FROM medico m
+            INNER JOIN areas_medicas a ON m.medi_id = a.medi_id
+            WHERE a.area_nome = ?
+        `;
+
+        console.log(`[INFO] Executando consulta para buscar médicos para a área: ${area_nome}`);
+
+        db.query(query, [area_nome], (error, results) => {
+            if (error) {
+                console.error(`[ERROR] Falha ao buscar médicos para a área: ${area_nome}`, error);
+                reject({ error: 'Erro ao buscar médicos pela área.', details: error });
+                return;
+            }
+
+            console.log(`[INFO] Resultados da consulta:`, results);
+
+            // Se nenhum médico for encontrado, retorna uma lista vazia
+            if (results.length === 0) {
+                console.warn(`[WARN] Nenhum médico encontrado para a área: ${area_nome}`);
+                resolve([]);  // Retorna um array vazio
+                return;
+            }
+
+            // Formatar os resultados com os nomes dos médicos
+            const medicos = results.map(result => ({
+                medi_nome: result.medi_nome
+            }));
+
+            resolve(medicos); // Resolve com os médicos encontrados
+        });
+    });
+},
+
+
+
+
+
 
 
 
@@ -243,7 +327,7 @@ module.exports ={
     });
 },
 
-     
+
      
 
 

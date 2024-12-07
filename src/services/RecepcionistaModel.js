@@ -507,7 +507,33 @@ module.exports = {
     
 
 
-
+    TodasRecepDeUmaUbs: (ubs_id) => {
+        return new Promise((aceito, recusado) => {
+            let query = `
+                SELECT
+                    recepcionista.recep_nome           -- Nome do recepcionista
+                FROM
+                    recepcionista
+                WHERE
+                    recepcionista.ubs_id = ?
+            `;
+    
+            db.query(query, [ubs_id], (error, results) => {
+                if (error) {
+                    recusado({ error: 'Ocorreu um erro ao buscar os recepcionistas.', details: error });
+                    return;
+                }
+    
+                const recepcionistas = results.map(result => ({
+                    recep_nome: result.recep_nome    // Nome do recepcionista
+                }));
+    
+                aceito(recepcionistas);
+            });
+        });
+    },
+    
+    
 
 
 
